@@ -266,6 +266,64 @@ button{ cursor:pointer; border:none; }
 .stat-big{ font-family:var(--font-display); font-size:38px; font-weight:600; line-height:1; color:var(--yellow); }
 .stat-label{ font-size:12px; color:var(--chalk-dim); margin-top:4px; }
 
+/* time picker field */
+.time-picker-field{ position:relative; display:flex; align-items:center; cursor:pointer; }
+.time-picker-field input{ cursor:pointer; padding-right:34px; }
+.time-picker-ic{ position:absolute; right:11px; color:var(--chalk-dim); display:flex; pointer-events:none; }
+
+/* analog clock */
+.clock-readout{ display:flex; align-items:center; justify-content:center; gap:2px; margin-bottom:22px; font-family:var(--font-mono); }
+.clock-readout-part{ background:var(--surface2); border:1px solid transparent; border-radius:8px; padding:8px 12px; font-size:26px; font-weight:600; color:var(--chalk-dim); }
+.clock-readout-part.active{ background:rgba(228,185,78,.14); color:var(--yellow); border-color:var(--yellow); }
+.clock-readout span{ font-size:26px; color:var(--chalk-faint); padding:0 2px; }
+.clock-ampm{ display:flex; flex-direction:column; gap:4px; margin-left:12px; }
+.clock-ampm-btn{ background:var(--surface2); border:1px solid var(--border-strong); border-radius:6px; padding:4px 10px; font-size:11.5px; font-weight:700; color:var(--chalk-dim); }
+.clock-ampm-btn.active{ background:var(--yellow); color:var(--bg); border-color:transparent; }
+.clock-face{
+  position:relative; width:240px; height:240px; max-width:100%; margin:0 auto;
+  border-radius:50%; background:var(--surface2); border:1px solid var(--border-strong);
+  aspect-ratio:1/1;
+}
+.clock-center{ position:absolute; left:50%; top:50%; width:8px; height:8px; border-radius:50%; background:var(--yellow); transform:translate(-50%,-50%); z-index:3; }
+.clock-hand{
+  position:absolute; left:50%; top:50%; height:2px; background:var(--yellow);
+  transform-origin:0 50%; border-radius:2px; z-index:2;
+}
+.clock-num{
+  position:absolute; width:32px; height:32px; margin:-16px; border-radius:50%;
+  background:transparent; border:none; color:var(--chalk-dim); font-family:var(--font-mono);
+  font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center; z-index:2;
+}
+.clock-num.active{ background:var(--yellow); color:var(--bg); }
+.clock-num:hover:not(.active){ background:var(--surface3); }
+
+/* professional routine table */
+.routine-summary{ display:flex; gap:22px; flex-wrap:wrap; }
+.routine-summary .stat-big{ font-size:28px; }
+.timetable-wrap{ overflow-x:auto; }
+table.timetable{ width:100%; border-collapse:collapse; min-width:640px; }
+table.timetable th{
+  text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--chalk-dim); font-weight:700; padding:10px 12px; border-bottom:1px solid var(--border-strong);
+}
+table.timetable td{ padding:11px 12px; border-bottom:1px solid var(--border); font-size:13.5px; vertical-align:middle; }
+table.timetable tr:last-child td{ border-bottom:none; }
+table.timetable tr.day-first td{ border-top:1px solid var(--border-strong); }
+table.timetable tr.is-today{ background:rgba(228,185,78,.06); }
+table.timetable .tt-day{ font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--chalk-dim); white-space:nowrap; }
+table.timetable tr.is-today .tt-day{ color:var(--yellow); }
+table.timetable .tt-course{ display:flex; align-items:center; gap:9px; }
+table.timetable .tt-dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+table.timetable .tt-code{ font-weight:600; }
+table.timetable .tt-name{ color:var(--chalk-dim); font-size:12px; }
+table.timetable .tt-time{ font-family:var(--font-mono); white-space:nowrap; color:var(--chalk-dim); }
+
+/* grading */
+.grading-summary{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.grading-tag{ font-size:11px; padding:3px 9px; border-radius:6px; background:var(--surface2); border:1px solid var(--border); color:var(--chalk-dim); }
+.grading-tag b{ color:var(--chalk); }
+.grading-tag.lab{ border-color:rgba(127,168,201,.35); }
+
 /* print */
 #printArea{ display:none; }
 @media print{
@@ -354,6 +412,13 @@ function daysBetween(a,b){
 function todayDayIndex(){ return new Date().getDay(); } // 0=Sun
 function minutesNow(){ const d=new Date(); return d.getHours()*60+d.getMinutes(); }
 function toMinutes(t){ if(!t) return 0; const [h,m]=t.split(':').map(Number); return h*60+m; }
+function formatTime12(t){
+  if(!t) return '';
+  let [h,m] = t.split(':').map(Number);
+  const ap = h>=12 ? 'PM':'AM';
+  h = h%12; if(h===0) h=12;
+  return `${h}:${String(m).padStart(2,'0')} ${ap}`;
+}
 function deadlineStatus(dateStr){
   if(!dateStr) return null;
   const diff = daysBetween(todayISO(), dateStr);
@@ -403,6 +468,91 @@ function openModal(html){
 function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
 document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
 
+/* ---------------- Analog Time Picker ---------------- */
+let clockState = null;
+function timeInputHtml(id, value24){
+  return `<div class="time-picker-field" onclick="openClockPicker('${id}')">
+    <input type="text" id="${id}" data-time="${value24||''}" value="${value24?formatTime12(value24):''}" placeholder="Select time" readonly style="cursor:pointer;">
+    <span class="time-picker-ic">${ICONS.clock}</span>
+  </div>`;
+}
+function openClockPicker(targetId){
+  const input = document.getElementById(targetId);
+  const raw = input.dataset.time || '';
+  let h24 = 9, m = 0;
+  if(raw){ const p = raw.split(':').map(Number); h24 = p[0]; m = p[1]; }
+  let ampm = h24>=12? 'PM':'AM';
+  let h12 = h24%12; if(h12===0) h12=12;
+  clockState = { targetId, hour:h12, minute:m, ampm, mode:'hour' };
+  openModal(clockPickerHtml());
+}
+function clockPt(index, total, radiusPct){
+  const angle = (index/total)*2*Math.PI - Math.PI/2;
+  const x = 50 + radiusPct*Math.cos(angle);
+  const y = 50 + radiusPct*Math.sin(angle);
+  return {x,y,angle};
+}
+function clockPickerHtml(){
+  const s = clockState;
+  const isHour = s.mode==='hour';
+  const numbers = isHour
+    ? Array.from({length:12},(_,i)=> i===0?12:i)
+    : Array.from({length:12},(_,i)=> i*5);
+  const selectedIndex = isHour
+    ? (s.hour===12? 0 : s.hour)
+    : (s.minute/5);
+  const handAngle = (selectedIndex/12)*2*Math.PI - Math.PI/2;
+  const handLen = 34;
+  const handX = 50 + handLen*Math.cos(handAngle);
+  const handY = 50 + handLen*Math.sin(handAngle);
+  const dots = numbers.map((n,i)=>{
+    const pt = clockPt(i,12,38);
+    const active = isHour? (n===s.hour || (n===12 && s.hour===12)) : (n===s.minute);
+    return `<button type="button" class="clock-num ${active?'active':''}" style="left:${pt.x}%; top:${pt.y}%;" onclick="${isHour? `pickClockHour(${n})` : `pickClockMinute(${n})`}">${isHour? n : String(n).padStart(2,'0')}</button>`;
+  }).join('');
+  return `
+    <h3>Select Time</h3>
+    <div class="clock-readout">
+      <button type="button" class="clock-readout-part ${isHour?'active':''}" onclick="clockState.mode='hour'; openModal(clockPickerHtml());">${String(s.hour).padStart(2,'0')}</button>
+      <span>:</span>
+      <button type="button" class="clock-readout-part ${!isHour?'active':''}" onclick="clockState.mode='minute'; openModal(clockPickerHtml());">${String(s.minute).padStart(2,'0')}</button>
+      <div class="clock-ampm">
+        <button type="button" class="clock-ampm-btn ${s.ampm==='AM'?'active':''}" onclick="clockState.ampm='AM'; openModal(clockPickerHtml());">AM</button>
+        <button type="button" class="clock-ampm-btn ${s.ampm==='PM'?'active':''}" onclick="clockState.ampm='PM'; openModal(clockPickerHtml());">PM</button>
+      </div>
+    </div>
+    <div class="clock-face">
+      <div class="clock-hand" style="width:${handLen}%; transform:rotate(${(handAngle*180/Math.PI)+90}deg);"></div>
+      <div class="clock-center"></div>
+      ${dots}
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmClockPick()">Done</button>
+    </div>
+  `;
+}
+function pickClockHour(h){
+  clockState.hour = h;
+  clockState.mode = 'minute';
+  openModal(clockPickerHtml());
+}
+function pickClockMinute(m){
+  clockState.minute = m;
+  openModal(clockPickerHtml());
+}
+function confirmClockPick(){
+  const s = clockState;
+  let h24 = s.hour%12;
+  if(s.ampm==='PM') h24 += 12;
+  const time24 = `${String(h24).padStart(2,'0')}:${String(s.minute).padStart(2,'0')}`;
+  const input = document.getElementById(s.targetId);
+  input.dataset.time = time24;
+  input.value = formatTime12(time24);
+  clockState = null;
+  closeModal();
+}
+
 /* ---------------- Icons ---------------- */
 const ICONS = {
   dashboard:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
@@ -416,7 +566,10 @@ const ICONS = {
   trash:'<svg viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>',
   edit:'<svg viewBox="0 0 24 24" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>',
   sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8"/></svg>',
-  moon:'<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>'
+  moon:'<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" width="15" height="15" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>',
+  grading:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>'
 };
 
 /* ---------------- Navigation ---------------- */
@@ -498,7 +651,7 @@ function renderDashboard(){
     const isNow = now>=toMinutes(r.start) && now<=toMinutes(r.end);
     return `<div class="tl-item ${isNow?'now':''}">
       <div class="tl-dot" style="${isNow?'':'border-color:'+courseColor(r.courseId)}"></div>
-      <div class="tl-time">${r.start} – ${r.end}</div>
+      <div class="tl-time">${formatTime12(r.start)} – ${formatTime12(r.end)}</div>
       <div class="tl-title">${c? c.code+' — '+c.name : 'Course removed'}</div>
       ${r.room? `<div class="tl-meta">Room: ${r.room}</div>`:''}
     </div>`;
@@ -563,16 +716,25 @@ function renderDashboard(){
 /* ---------------- Setup ---------------- */
 function renderSetup(){
   const sem = state.semester;
-  const courseRows = state.courses.map((c,i)=>`
-    <div class="task-row">
-      <span class="chip-swatch" style="background:${courseColor(c.id)}; width:11px; height:11px;"></span>
+  const courseRows = state.courses.map((c,i)=>{
+    const gc = c.gradingCourse||[], gl = c.gradingLab||[];
+    const tags = [
+      ...gc.map(g=>`<span class="grading-tag">${g.name}: <b>${g.weight}%</b></span>`),
+      ...(c.hasLab? gl.map(g=>`<span class="grading-tag lab">Lab · ${g.name}: <b>${g.weight}%</b></span>`) : [])
+    ].join('');
+    return `
+    <div class="task-row" style="align-items:flex-start;">
+      <span class="chip-swatch" style="background:${courseColor(c.id)}; width:11px; height:11px; margin-top:5px;"></span>
       <div style="flex:1;">
         <div class="task-title">${c.code}</div>
         <div class="task-sub">${c.name}</div>
+        ${tags? `<div class="grading-summary">${tags}</div>` : `<div class="hint" style="margin-top:6px;">No grading criteria set yet.</div>`}
       </div>
+      <button class="btn btn-icon btn-ghost" onclick="openGradingModal('${c.id}')" title="Grading criteria">${ICONS.grading}</button>
       <button class="btn btn-icon btn-ghost" onclick="editCourse('${c.id}')">${ICONS.edit}</button>
       <button class="btn btn-icon btn-danger" onclick="deleteCourse('${c.id}')">${ICONS.trash}</button>
-    </div>`).join('') || `<div class="empty">No courses added yet.</div>`;
+    </div>`;
+  }).join('') || `<div class="empty">No courses added yet.</div>`;
 
   const p = state.profile;
   return `
@@ -693,6 +855,85 @@ function deleteCourse(id){
   save(); toast('Course deleted'); render();
 }
 
+/* ---------------- Grading criteria ---------------- */
+let gradingDraft = null;
+function openGradingModal(courseId){
+  const c = courseById(courseId);
+  gradingDraft = {
+    courseId,
+    hasLab: !!c.hasLab,
+    course: (c.gradingCourse||[]).map(g=>({...g})),
+    lab: (c.gradingLab||[]).map(g=>({...g}))
+  };
+  openModal(gradingModalHtml());
+}
+function gradingRowsHtml(list, kind){
+  return list.map((g,i)=>`
+    <div class="row" style="align-items:flex-end;">
+      <div class="field" style="flex:2; margin-bottom:8px;">
+        ${i===0?'<label>Component</label>':''}
+        <input value="${g.name}" placeholder="e.g. Midterm" oninput="gradingDraft.${kind}[${i}].name=this.value">
+      </div>
+      <div class="field" style="flex:1; margin-bottom:8px;">
+        ${i===0?'<label>Weight %</label>':''}
+        <input type="number" min="0" max="100" value="${g.weight}" oninput="gradingDraft.${kind}[${i}].weight=this.value; updateGradingTotal('${kind}');">
+      </div>
+      <button class="btn btn-icon btn-danger" style="margin-bottom:8px;" onclick="removeGradingRow('${kind}',${i})">${ICONS.trash}</button>
+    </div>`).join('') || `<div class="empty" style="padding:4px 0;">No grading components added.</div>`;
+}
+function gradingTotal(kind){
+  return gradingDraft[kind].reduce((s,g)=>s+(Number(g.weight)||0),0);
+}
+function gradingModalHtml(){
+  const c = courseById(gradingDraft.courseId);
+  const totalC = gradingTotal('course');
+  const totalL = gradingTotal('lab');
+  return `
+    <h3>Grading Criteria — ${c.code}</h3>
+    <p class="card-title" style="margin-top:0;">Course grading</p>
+    <div id="gradingRowsCourse">${gradingRowsHtml(gradingDraft.course,'course')}</div>
+    <button class="btn btn-ghost btn-sm" onclick="addGradingRow('course')">${ICONS.plus} Add component</button>
+    <div class="hint" id="gradingTotalCourse" style="color:${totalC===100?'var(--green)':'var(--amber)'};">Total: ${totalC}%${totalC===100?' ✓':' (should total 100%)'}</div>
+
+    <div class="field" style="margin-top:18px; display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" id="mHasLab" style="width:auto;" ${gradingDraft.hasLab?'checked':''} onchange="gradingDraft.hasLab=this.checked; openModal(gradingModalHtml());">
+      <label style="margin:0;" for="mHasLab">This course has a separate lab component</label>
+    </div>
+    ${gradingDraft.hasLab? `
+      <p class="card-title">Lab grading</p>
+      <div id="gradingRowsLab">${gradingRowsHtml(gradingDraft.lab,'lab')}</div>
+      <button class="btn btn-ghost btn-sm" onclick="addGradingRow('lab')">${ICONS.plus} Add component</button>
+      <div class="hint" id="gradingTotalLab" style="color:${totalL===100?'var(--green)':'var(--amber)'};">Total: ${totalL}%${totalL===100?' ✓':' (should total 100%)'}</div>
+    `:''}
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveGrading()">Save</button>
+    </div>
+  `;
+}
+function updateGradingTotal(kind){
+  const el = document.getElementById(kind==='course'?'gradingTotalCourse':'gradingTotalLab');
+  if(!el) return;
+  const total = gradingTotal(kind);
+  el.textContent = `Total: ${total}%${total===100?' ✓':' (should total 100%)'}`;
+  el.style.color = total===100? 'var(--green)':'var(--amber)';
+}
+function addGradingRow(kind){
+  gradingDraft[kind].push({name:'',weight:0});
+  openModal(gradingModalHtml());
+}
+function removeGradingRow(kind,i){
+  gradingDraft[kind].splice(i,1);
+  openModal(gradingModalHtml());
+}
+function saveGrading(){
+  const c = courseById(gradingDraft.courseId);
+  c.gradingCourse = gradingDraft.course.filter(g=>String(g.name).trim()!=='').map(g=>({name:String(g.name).trim(), weight:Number(g.weight)||0}));
+  c.hasLab = gradingDraft.hasLab;
+  c.gradingLab = gradingDraft.hasLab? gradingDraft.lab.filter(g=>String(g.name).trim()!=='').map(g=>({name:String(g.name).trim(), weight:Number(g.weight)||0})) : [];
+  save(); closeModal(); toast('Grading criteria saved'); gradingDraft=null; render();
+}
+
 /* ---------------- Routine ---------------- */
 function renderRoutine(){
   if(state.courses.length===0){
@@ -712,12 +953,7 @@ function renderRoutine(){
       ${todays.length? todays.map(r=>slotHtml(r)).join('') : `<div class="empty">No classes today.</div>`}
     </div>`;
   } else {
-    body = DAYS.map((d,i)=>{
-      const items = state.routine.filter(r=>r.day===i).sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
-      if(items.length===0) return '';
-      return `<div class="day-block"><div class="day-head">${d}</div>${items.map(r=>slotHtml(r)).join('')}</div>`;
-    }).join('') || `<div class="empty">No classes added yet.</div>`;
-    body = `<div class="card">${body}</div>`;
+    body = renderFullRoutineTable();
   }
 
   return `
@@ -737,11 +973,68 @@ function slotHtml(r){
       <div class="cm">${c? c.name:''}${r.room? ' · Room '+r.room:''}</div>
     </div>
     <div style="display:flex; align-items:center; gap:10px;">
-      <div class="time">${r.start}–${r.end}</div>
+      <div class="time">${formatTime12(r.start)} – ${formatTime12(r.end)}</div>
       <button class="btn btn-icon btn-ghost" onclick="openSlotModal('${r.id}')">${ICONS.edit}</button>
       <button class="btn btn-icon btn-danger" onclick="deleteSlot('${r.id}')">${ICONS.trash}</button>
     </div>
   </div>`;
+}
+function renderFullRoutineTable(){
+  const totalClasses = state.routine.length;
+  const totalMinutes = state.routine.reduce((s,r)=>s+Math.max(0,toMinutes(r.end)-toMinutes(r.start)),0);
+  const totalHours = Math.round((totalMinutes/60)*10)/10;
+  const activeDays = new Set(state.routine.map(r=>r.day)).size;
+  const todayIdx = todayDayIndex();
+
+  let rowsHtml = '';
+  DAYS.forEach((d,i)=>{
+    const items = state.routine.filter(r=>r.day===i).sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
+    if(items.length===0) return;
+    items.forEach((r,idx)=>{
+      const c = courseById(r.courseId);
+      rowsHtml += `<tr class="${idx===0?'day-first':''} ${i===todayIdx?'is-today':''}">
+        <td class="tt-day">${idx===0? d : ''}</td>
+        <td>
+          <div class="tt-course">
+            <span class="tt-dot" style="background:${courseColor(r.courseId)};"></span>
+            <div>
+              <div class="tt-code">${c? c.code : '—'}</div>
+              <div class="tt-name">${c? c.name : ''}</div>
+            </div>
+          </div>
+        </td>
+        <td class="tt-time">${formatTime12(r.start)} – ${formatTime12(r.end)}</td>
+        <td>${r.room||'—'}</td>
+        <td style="text-align:right; white-space:nowrap;">
+          <button class="btn btn-icon btn-ghost" onclick="openSlotModal('${r.id}')">${ICONS.edit}</button>
+          <button class="btn btn-icon btn-danger" onclick="deleteSlot('${r.id}')">${ICONS.trash}</button>
+        </td>
+      </tr>`;
+    });
+  });
+
+  if(!rowsHtml){
+    return `<div class="card"><div class="empty">No classes added yet.</div></div>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="routine-summary">
+        <div><div class="stat-big">${totalClasses}</div><div class="stat-label">classes / week</div></div>
+        <div><div class="stat-big">${totalHours}</div><div class="stat-label">contact hours / week</div></div>
+        <div><div class="stat-big">${activeDays}</div><div class="stat-label">active days</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="card-title">Weekly timetable</p>
+      <div class="timetable-wrap">
+        <table class="timetable">
+          <thead><tr><th>Day</th><th>Course</th><th>Time</th><th>Room</th><th></th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
 function openSlotModal(id){
   const r = id? state.routine.find(x=>x.id===id) : {courseId:state.courses[0]?.id, day:todayDayIndex(), start:'', end:'', room:''};
@@ -752,8 +1045,8 @@ function openSlotModal(id){
     <div class="field"><label>Course</label><select id="mSlotCourse">${courseOpts}</select></div>
     <div class="field"><label>Day</label><select id="mSlotDay">${dayOpts}</select></div>
     <div class="row">
-      <div class="field"><label>Start time</label><input type="time" id="mSlotStart" value="${r.start||''}"></div>
-      <div class="field"><label>End time</label><input type="time" id="mSlotEnd" value="${r.end||''}"></div>
+      <div class="field"><label>Start time</label>${timeInputHtml('mSlotStart', r.start)}</div>
+      <div class="field"><label>End time</label>${timeInputHtml('mSlotEnd', r.end)}</div>
     </div>
     <div class="field"><label>Room (optional)</label><input id="mSlotRoom" value="${r.room||''}" placeholder="e.g. 304"></div>
     <div class="modal-actions">
@@ -765,8 +1058,8 @@ function openSlotModal(id){
 function saveSlot(id){
   const courseId = document.getElementById('mSlotCourse').value;
   const day = Number(document.getElementById('mSlotDay').value);
-  const start = document.getElementById('mSlotStart').value;
-  const end = document.getElementById('mSlotEnd').value;
+  const start = document.getElementById('mSlotStart').dataset.time || '';
+  const end = document.getElementById('mSlotEnd').dataset.time || '';
   const room = document.getElementById('mSlotRoom').value.trim();
   if(!start || !end){ toast('Please enter start and end time'); return; }
   if(id){
@@ -835,10 +1128,43 @@ function renderTasks(){
   return `
     <div class="topbar">
       <div><h1>Tasks</h1><div class="sub">${daysLeft!==null? `${daysLeft} days left in the semester`:'Track work by course'}</div></div>
+      ${state.courses.length>1? `<div class="topbar-actions"><button class="btn btn-ghost" onclick="openCopyTasksModal()">${ICONS.copy} Copy tasks</button></div>`:''}
     </div>
     ${chipsHtml}
     ${courseSections}
   `;
+}
+function openCopyTasksModal(){
+  const opts = state.courses.map(c=>`<option value="${c.id}">${c.code} — ${c.name}</option>`).join('');
+  openModal(`
+    <h3>Copy Tasks Between Courses</h3>
+    <div class="field"><label>Copy from</label><select id="mCopyFrom">${opts}</select></div>
+    <div class="field"><label>Copy to</label><select id="mCopyTo">${opts}</select></div>
+    <div class="field" style="display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" id="mCopyKeepDeadline" style="width:auto;">
+      <label style="margin:0;" for="mCopyKeepDeadline">Keep original deadlines (leave unchecked to copy without deadlines)</label>
+    </div>
+    <div class="hint">All tasks from the source course will be duplicated into the target course as new, incomplete tasks. Existing tasks in the target course are kept.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="copyTasksBetweenCourses()">Copy tasks</button>
+    </div>
+  `);
+}
+function copyTasksBetweenCourses(){
+  const fromId = document.getElementById('mCopyFrom').value;
+  const toId = document.getElementById('mCopyTo').value;
+  const keepDeadline = document.getElementById('mCopyKeepDeadline').checked;
+  if(fromId===toId){ toast('Please choose two different courses'); return; }
+  const source = state.tasks.filter(t=>t.courseId===fromId);
+  if(source.length===0){ toast('The source course has no tasks to copy'); return; }
+  source.forEach(t=>{
+    state.tasks.push({
+      id:uid(), courseId:toId, title:t.title, type:t.type,
+      deadline: keepDeadline? (t.deadline||'') : '', completed:false
+    });
+  });
+  save(); closeModal(); toast(`${source.length} task(s) copied`); render();
 }
 function toggleTask(id){
   const t = state.tasks.find(x=>x.id===id);
@@ -1021,7 +1347,7 @@ function exportPDF(){
   DAYS.forEach((d,i)=>{
     state.routine.filter(r=>r.day===i).sort((a,b)=>toMinutes(a.start)-toMinutes(b.start)).forEach(r=>{
       const c = courseById(r.courseId);
-      html += `<tr><td>${d}</td><td>${r.start}-${r.end}</td><td>${c?c.code+' '+c.name:''}</td><td>${r.room||''}</td></tr>`;
+      html += `<tr><td>${d}</td><td>${formatTime12(r.start)}-${formatTime12(r.end)}</td><td>${c?c.code+' '+c.name:''}</td><td>${r.room||''}</td></tr>`;
     });
   });
   html += `</table>`;
