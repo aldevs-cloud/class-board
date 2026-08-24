@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ClassBoard — Lecturer Planner</title>
+<meta name="theme-color" content="#141F1A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#141F1A;
+  --surface:#1E332B;
+  --surface2:#25402F;
+  --surface3:#2B4736;
+  --border:rgba(237,234,224,0.12);
+  --border-strong:rgba(237,234,224,0.22);
+  --chalk:#EDEAE0;
+  --chalk-dim:rgba(237,234,224,0.62);
+  --chalk-faint:rgba(237,234,224,0.38);
+  --yellow:#E4B94E;
+  --blue:#7FA8C9;
+  --amber:#D9A24E;
+  --danger:#D9776A;
+  --green:#8FBF7F;
+  --purple:#B39CD8;
+  --teal:#6FB8A8;
+  --c0:#E4B94E; --c1:#7FA8C9; --c2:#D9A24E; --c3:#8FBF7F; --c4:#B39CD8; --c5:#6FB8A8; --c6:#D9776A;
+  --font-display:'Fraunces',serif;
+  --font-body:'IBM Plex Sans',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --radius:14px;
+  --shadow:none;
+}
+html[data-theme="light"]{
+  --bg:#F2F0E7;
+  --surface:#FFFFFF;
+  --surface2:#F5F3EA;
+  --surface3:#EBE7D9;
+  --border:rgba(20,31,26,0.10);
+  --border-strong:rgba(20,31,26,0.16);
+  --chalk:#182620;
+  --chalk-dim:rgba(24,38,32,0.64);
+  --chalk-faint:rgba(24,38,32,0.40);
+  --yellow:#A9740A;
+  --blue:#2E6690;
+  --amber:#AD6E0B;
+  --danger:#B3453A;
+  --green:#3F8A38;
+  --purple:#725AA8;
+  --teal:#227565;
+  --c0:#A9740A; --c1:#2E6690; --c2:#AD6E0B; --c3:#3F8A38; --c4:#725AA8; --c5:#227565; --c6:#B3453A;
+  --shadow:0 1px 2px rgba(20,31,26,0.06);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  background-image:
+    radial-gradient(circle at 15% 8%, rgba(228,185,78,0.05), transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(127,168,201,0.05), transparent 40%);
+  color:var(--chalk);
+  font-family:var(--font-body);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  transition:background .2s ease, color .2s ease;
+}
+::selection{ background:var(--yellow); color:var(--bg); }
+a{color:inherit;}
+h1,h2,h3,.display{ font-family:var(--font-display); font-weight:600; letter-spacing:-0.01em; }
+.mono{ font-family:var(--font-mono); }
+button, input, select, textarea{ font-family:inherit; color:inherit; }
+input, select, textarea{
+  background:var(--surface2);
+  border:1px solid var(--border-strong);
+  border-radius:8px;
+  padding:9px 11px;
+  font-size:14px;
+  color:var(--chalk);
+  width:100%;
+}
+input::placeholder, textarea::placeholder{ color:var(--chalk-faint); }
+input:focus, select:focus, textarea:focus{ outline:2px solid var(--yellow); outline-offset:1px; border-color:transparent; }
+label{ font-size:12px; color:var(--chalk-dim); display:block; margin-bottom:4px; font-weight:500; }
+.field{ margin-bottom:12px; }
+.row{ display:flex; gap:10px; flex-wrap:wrap; }
+.row > .field{ flex:1; min-width:140px; }
+
+button{ cursor:pointer; border:none; }
+.btn{
+  background:var(--surface3);
+  color:var(--chalk);
+  border:1px solid var(--border-strong);
+  border-radius:9px;
+  padding:9px 16px;
+  font-size:13.5px;
+  font-weight:600;
+  transition:transform .12s ease, background .15s ease;
+}
+.btn:hover{ background:var(--surface3); filter:brightness(1.12); transform:translateY(-1px); }
+.btn:active{ transform:translateY(0); }
+.btn-primary{ background:var(--yellow); color:var(--bg); border-color:transparent; }
+.btn-primary:hover{ filter:brightness(1.08); }
+.btn-danger{ background:transparent; color:var(--danger); border-color:rgba(217,119,106,0.4); }
+.btn-danger:hover{ background:rgba(217,119,106,0.12); }
+.btn-ghost{ background:transparent; border-color:var(--border-strong); }
+.btn-sm{ padding:5px 10px; font-size:12px; border-radius:7px; }
+.btn-icon{ padding:7px 9px; border-radius:7px; }
+
+/* App shell */
+.app{ display:flex; min-height:100vh; }
+.rail{
+  width:76px; flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column; align-items:center;
+  padding:20px 0; gap:6px;
+  position:sticky; top:0; height:100vh;
+}
+.rail .brand{
+  width:40px; height:40px; border-radius:10px;
+  background:linear-gradient(145deg, var(--yellow), var(--amber));
+  display:flex; align-items:center; justify-content:center;
+  color:var(--bg); font-family:var(--font-display); font-weight:700; font-size:16px;
+  margin-bottom:22px; overflow:hidden; flex-shrink:0;
+}
+.rail .brand img{ width:100%; height:100%; object-fit:cover; }
+.profile-header{ display:flex; align-items:center; gap:14px; margin-bottom:6px; }
+.avatar-lg{
+  width:64px; height:64px; border-radius:14px; flex-shrink:0; overflow:hidden;
+  background:linear-gradient(145deg, var(--yellow), var(--amber));
+  display:flex; align-items:center; justify-content:center;
+  color:var(--bg); font-family:var(--font-display); font-weight:700; font-size:22px;
+}
+.avatar-lg img{ width:100%; height:100%; object-fit:cover; }
+.avatar-actions{ display:flex; gap:8px; margin-top:4px; }
+.profile-name{ font-size:16px; font-weight:700; }
+.profile-sub{ font-size:12.5px; color:var(--chalk-dim); }
+.tab-btn{
+  width:56px; height:56px; border-radius:12px; background:transparent;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px; color:var(--chalk-dim); font-size:9.5px; font-weight:600;
+  border:1px solid transparent; position:relative;
+}
+.tab-btn svg{ width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.7; }
+.tab-btn.active{ background:var(--surface3); color:var(--yellow); border-color:var(--border-strong); }
+.tab-btn.active svg{ stroke:var(--yellow); }
+.tab-btn .dot{ position:absolute; top:6px; right:10px; width:7px; height:7px; border-radius:50%; background:var(--danger); display:none; }
+.tab-btn .dot.show{ display:block; }
+.theme-toggle{
+  margin-top:auto; width:44px; height:44px; border-radius:10px; background:var(--surface2);
+  display:flex; align-items:center; justify-content:center; border:1px solid var(--border-strong); color:var(--chalk-dim);
+}
+.theme-toggle svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; }
+
+.main{ flex:1; min-width:0; padding:28px 34px 100px; max-width:1080px; }
+.topbar{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:22px; flex-wrap:wrap; gap:10px; }
+.topbar h1{ font-size:26px; margin:0; }
+.topbar .sub{ color:var(--chalk-dim); font-size:13px; }
+.topbar-actions{ display:flex; align-items:center; gap:10px; }
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
+}
+.card-title{ font-size:14px; color:var(--chalk-dim); font-weight:600; margin:0 0 12px; text-transform:uppercase; letter-spacing:.06em; }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+@media(max-width:900px){ .grid2,.grid3{ grid-template-columns:1fr; } }
+
+/* progress */
+.progress-track{ background:var(--surface2); border-radius:20px; height:9px; overflow:hidden; }
+.progress-fill{ height:100%; border-radius:20px; transition:width .4s ease; }
+
+/* chip */
+.chip{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 12px; border-radius:20px; font-size:12.5px; font-weight:600;
+  background:var(--surface2); border:1px solid var(--border-strong); color:var(--chalk-dim);
+}
+.chip.active{ background:var(--yellow); color:var(--bg); border-color:transparent; }
+.chip-swatch{ width:8px; height:8px; border-radius:50%; }
+.chips{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+
+/* badges */
+.badge{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; font-family:var(--font-mono); white-space:nowrap; }
+.badge.overdue{ background:rgba(217,119,106,.16); color:var(--danger); }
+.badge.soon{ background:rgba(217,162,78,.16); color:var(--amber); }
+.badge.ok{ background:rgba(143,191,127,.14); color:var(--green); }
+.badge.done{ background:rgba(127,168,201,.14); color:var(--blue); }
+
+/* today timeline - signature element */
+.timeline{ position:relative; padding-left:28px; }
+.timeline::before{
+  content:''; position:absolute; left:6px; top:4px; bottom:4px; width:1px;
+  background-image:linear-gradient(var(--border-strong) 60%, transparent 0%);
+  background-size:1px 8px; background-repeat:repeat-y;
+}
+.tl-item{ position:relative; padding-bottom:18px; }
+.tl-item:last-child{ padding-bottom:0; }
+.tl-dot{ position:absolute; left:-28px; top:3px; width:13px; height:13px; border-radius:50%; background:var(--surface2); border:2px solid var(--chalk-faint); }
+.tl-item.now .tl-dot{ background:var(--yellow); border-color:var(--yellow); box-shadow:0 0 0 4px rgba(228,185,78,.18); }
+.tl-time{ font-family:var(--font-mono); font-size:12px; color:var(--chalk-dim); margin-bottom:2px; }
+.tl-title{ font-size:15px; font-weight:600; }
+.tl-item.now .tl-title{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='6'%3E%3Cpath d='M0,3 Q5,0 10,3 T20,3' stroke='%23E4B94E' fill='none' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat:repeat-x; background-position:bottom; padding-bottom:4px; }
+.tl-meta{ font-size:12px; color:var(--chalk-dim); }
+.empty{ color:var(--chalk-faint); font-size:13.5px; padding:14px 0; }
+
+/* course color stripe */
+.course-card{ border-left:3px solid var(--yellow); }
+.task-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+.task-row:last-child{ border-bottom:none; }
+.task-check{
+  width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border-strong);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--surface2); cursor:pointer;
+}
+.task-check.checked{ background:var(--green); border-color:var(--green); }
+.task-check.checked svg{ stroke:var(--bg); }
+.task-check svg{ width:12px; height:12px; stroke:transparent; stroke-width:3; fill:none; }
+.task-title{ font-size:14.5px; font-weight:500; }
+.task-title.done{ text-decoration:line-through; color:var(--chalk-faint); }
+.task-sub{ font-size:11.5px; color:var(--chalk-dim); margin-top:2px; }
+
+/* routine grid */
+.day-block{ margin-bottom:14px; }
+.day-head{ font-size:13px; font-weight:700; color:var(--yellow); margin-bottom:8px; letter-spacing:.03em; text-transform:uppercase; }
+.class-slot{ display:flex; justify-content:space-between; align-items:center; background:var(--surface2); border-radius:9px; padding:10px 13px; margin-bottom:7px; border-left:3px solid var(--blue); }
+.class-slot .ct{ font-weight:600; font-size:14px; }
+.class-slot .cm{ font-size:12px; color:var(--chalk-dim); }
+.class-slot .time{ font-family:var(--font-mono); font-size:12.5px; color:var(--chalk-dim); white-space:nowrap; margin-left:10px; }
+
+/* modal */
+.overlay{ position:fixed; inset:0; background:rgba(10,16,13,.55); backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; z-index:50; padding:20px; }
+.overlay.show{ display:flex; }
+.modal{ background:var(--surface); border:1px solid var(--border-strong); border-radius:16px; padding:22px 24px; width:100%; max-width:440px; max-height:88vh; overflow-y:auto; }
+.modal h3{ margin:0 0 16px; font-size:18px; }
+.modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+
+/* empty state */
+.empty-state{ text-align:center; padding:36px 20px; color:var(--chalk-dim); }
+.empty-state .display{ font-size:19px; color:var(--chalk); margin-bottom:6px; }
+
+/* toast */
+#toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--surface3); border:1px solid var(--border-strong); padding:11px 18px; border-radius:10px; font-size:13.5px; opacity:0; pointer-events:none; transition:all .25s ease; z-index:100; color:var(--chalk); }
+#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* bottom nav mobile */
+.bottom-nav{ display:none; }
+@media(max-width:760px){
+  .rail{ display:none; }
+  .main{ padding:18px 16px 90px; }
+  .grid3{ grid-template-columns:1fr; }
+  .bottom-nav{
+    display:flex; position:fixed; bottom:0; left:0; right:0; height:64px;
+    background:var(--surface); border-top:1px solid var(--border); z-index:40;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .bottom-nav .tab-btn{ flex:1; width:auto; height:100%; border-radius:0; }
+}
+
+/* dashboard stats */
+.stat-big{ font-family:var(--font-display); font-size:38px; font-weight:600; line-height:1; color:var(--yellow); }
+.stat-label{ font-size:12px; color:var(--chalk-dim); margin-top:4px; }
+
+/* print */
+#printArea{ display:none; }
+@media print{
+  body *{ visibility:hidden; }
+  #printArea, #printArea *{ visibility:visible; }
+  #printArea{ display:block; position:absolute; top:0; left:0; width:100%; color:#111; background:#fff; padding:20px; }
+  #printArea h1,#printArea h2{ font-family:serif; color:#111; }
+  #printArea .p-course{ margin-bottom:18px; page-break-inside:avoid; }
+  #printArea table{ width:100%; border-collapse:collapse; font-size:12px; }
+  #printArea td,#printArea th{ border:1px solid #ccc; padding:5px 7px; text-align:left; }
+}
+.hint{ font-size:12px; color:var(--chalk-faint); margin-top:8px; line-height:1.5; }
+textarea{ resize:vertical; min-height:60px; }
+select{ appearance:none; -webkit-appearance:none; background-repeat:no-repeat; background-position:right 12px center; padding-right:30px; }
+html[data-theme="dark"] select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0L5 6L10 0' fill='%23EDEAE0'/%3E%3C/svg%3E"); }
+html[data-theme="light"] select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0L5 6L10 0' fill='%23182620'/%3E%3C/svg%3E"); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="rail" id="rail"></nav>
+  <main class="main" id="main"></main>
+</div>
+<nav class="bottom-nav" id="bottomNav"></nav>
+
+<div class="overlay" id="overlay"><div class="modal" id="modalBody"></div></div>
+<div id="toast"></div>
+<div id="printArea"></div>
+
+<script>
+/* ---------------- Data layer ---------------- */
+const STORAGE_KEY = 'classboardData_v1';
+const THEME_KEY = 'classboardTheme';
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const COURSE_COLOR_VARS = ['--c0','--c1','--c2','--c3','--c4','--c5','--c6'];
+const TASK_TYPES = ['Quiz','Midterm Question Prep','Final Question Prep','Assignment','Gradesheet','Class Material','Lab','Other'];
+
+function defaultData(){
+  return { profile:{name:'',department:'',university:'',photo:''}, semester:{name:'',start:'',end:''}, courses:[], routine:[], tasks:[], reminders:[] };
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return defaultData();
+    const d = JSON.parse(raw);
+    return Object.assign(defaultData(), d);
+  }catch(e){ return defaultData(); }
+}
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+let state = load();
+let activeTab = 'dashboard';
+let routineView = 'today'; // 'today' | 'full'
+let taskFilterCourse = 'all';
+
+/* ---------------- Theme ---------------- */
+function loadTheme(){
+  const saved = localStorage.getItem(THEME_KEY);
+  if(saved) return saved;
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem(THEME_KEY, t);
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  applyTheme(cur==='dark' ? 'light' : 'dark');
+  renderNav();
+}
+applyTheme(loadTheme());
+
+/* ---------------- Date helpers ---------------- */
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(iso){
+  if(!iso) return '';
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('en-US', {day:'numeric', month:'short', year:'numeric'});
+}
+function daysBetween(a,b){
+  const A = new Date(a+'T00:00:00'), B = new Date(b+'T00:00:00');
+  return Math.round((B-A)/86400000);
+}
+function todayDayIndex(){ return new Date().getDay(); } // 0=Sun
+function minutesNow(){ const d=new Date(); return d.getHours()*60+d.getMinutes(); }
+function toMinutes(t){ if(!t) return 0; const [h,m]=t.split(':').map(Number); return h*60+m; }
+function deadlineStatus(dateStr){
+  if(!dateStr) return null;
+  const diff = daysBetween(todayISO(), dateStr);
+  if(diff < 0) return 'overdue';
+  if(diff <= 3) return 'soon';
+  return 'ok';
+}
+function statusLabel(dateStr){
+  const diff = daysBetween(todayISO(), dateStr);
+  if(diff < 0) return `${Math.abs(diff)}d overdue`;
+  if(diff === 0) return 'Due today';
+  if(diff === 1) return 'Due tomorrow';
+  return `${diff}d left`;
+}
+function courseColor(courseId){
+  const idx = state.courses.findIndex(c=>c.id===courseId);
+  const v = COURSE_COLOR_VARS[((idx % 7)+7)%7] || '--c0';
+  return `var(${v})`;
+}
+function courseById(id){ return state.courses.find(c=>c.id===id); }
+function initials(name){
+  if(!name) return 'CB';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if(parts.length===0) return 'CB';
+  if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+}
+function brandContent(){
+  if(state.profile.photo) return `<img src="${state.profile.photo}" alt="Profile photo">`;
+  return initials(state.profile.name);
+}
+
+/* ---------------- Toast ---------------- */
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------------- Modal ---------------- */
+function openModal(html){
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+
+/* ---------------- Icons ---------------- */
+const ICONS = {
+  dashboard:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
+  setup:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
+  routine:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>',
+  tasks:'<svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
+  reminders:'<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
+  data:'<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>',
+  sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8"/></svg>',
+  moon:'<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>'
+};
+
+/* ---------------- Navigation ---------------- */
+const TABS = [
+  {id:'dashboard', label:'Dashboard'},
+  {id:'setup', label:'Semester'},
+  {id:'routine', label:'Routine'},
+  {id:'tasks', label:'Tasks'},
+  {id:'reminders', label:'Reminders'},
+  {id:'data', label:'Export'},
+];
+function warningCount(){
+  const t = state.tasks.filter(x=>!x.completed && x.deadline && daysBetween(todayISO(),x.deadline) <= 3).length;
+  const r = state.reminders.filter(x=>!x.done && daysBetween(todayISO(), x.datetime.slice(0,10)) <= 1).length;
+  return t + r;
+}
+function renderNav(){
+  const wc = warningCount();
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  const html = TABS.map(t=>`
+    <button class="tab-btn ${activeTab===t.id?'active':''}" onclick="setTab('${t.id}')">
+      ${ICONS[t.id]}
+      <span>${t.label}</span>
+      ${t.id==='dashboard' && wc>0 ? `<span class="dot show"></span>`:''}
+    </button>`).join('');
+  const rail = document.getElementById('rail');
+  rail.innerHTML = `<div class="brand" title="${state.profile.name||'ClassBoard'}">${brandContent()}</div>` + html + `
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">${isDark? ICONS.sun : ICONS.moon}</button>`;
+  document.getElementById('bottomNav').innerHTML = html + `
+    <button class="tab-btn" onclick="toggleTheme()">${isDark? ICONS.sun : ICONS.moon}<span>Theme</span></button>`;
+}
+function setTab(id){ activeTab = id; render(); window.scrollTo({top:0}); }
+
+/* ---------------- Render root ---------------- */
+function render(){
+  renderNav();
+  const main = document.getElementById('main');
+  if(activeTab==='dashboard') main.innerHTML = renderDashboard();
+  else if(activeTab==='setup') main.innerHTML = renderSetup();
+  else if(activeTab==='routine') main.innerHTML = renderRoutine();
+  else if(activeTab==='tasks') main.innerHTML = renderTasks();
+  else if(activeTab==='reminders') main.innerHTML = renderReminders();
+  else if(activeTab==='data') main.innerHTML = renderData();
+}
+
+/* ---------------- Dashboard ---------------- */
+function renderDashboard(){
+  const sem = state.semester;
+  let semProgress = '';
+  if(sem.start && sem.end){
+    const total = daysBetween(sem.start, sem.end) || 1;
+    const elapsed = Math.min(Math.max(daysBetween(sem.start, todayISO()),0), total);
+    const left = Math.max(daysBetween(todayISO(), sem.end),0);
+    const pct = Math.min(100, Math.round((elapsed/total)*100));
+    semProgress = `
+      <div class="card">
+        <p class="card-title">Semester</p>
+        <div class="row" style="align-items:flex-end;">
+          <div>
+            <div class="stat-big">${left}</div>
+            <div class="stat-label">days left — ${sem.name || 'current semester'}</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:var(--yellow);"></div></div>
+          <div class="hint">${fmtDate(sem.start)} → ${fmtDate(sem.end)} · ${pct}% elapsed</div>
+        </div>
+      </div>`;
+  } else {
+    semProgress = `<div class="card"><p class="card-title">Semester</p><div class="empty-state" style="padding:16px 0;">Semester details haven't been set yet.<br><button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="setTab('setup')">Set up semester</button></div></div>`;
+  }
+
+  // Today's classes
+  const dIdx = todayDayIndex();
+  const todays = state.routine.filter(r=>r.day===dIdx).sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
+  const now = minutesNow();
+  const timelineHtml = todays.length ? `<div class="timeline">${todays.map(r=>{
+    const c = courseById(r.courseId);
+    const isNow = now>=toMinutes(r.start) && now<=toMinutes(r.end);
+    return `<div class="tl-item ${isNow?'now':''}">
+      <div class="tl-dot" style="${isNow?'':'border-color:'+courseColor(r.courseId)}"></div>
+      <div class="tl-time">${r.start} – ${r.end}</div>
+      <div class="tl-title">${c? c.code+' — '+c.name : 'Course removed'}</div>
+      ${r.room? `<div class="tl-meta">Room: ${r.room}</div>`:''}
+    </div>`;
+  }).join('')}</div>` : `<div class="empty-state">🌿 <div class="display">No classes today</div>Nothing has been added to the routine for today.</div>`;
+
+  // course progress
+  const courseCards = state.courses.map(c=>{
+    const ct = state.tasks.filter(t=>t.courseId===c.id);
+    const done = ct.filter(t=>t.completed).length;
+    const pct = ct.length? Math.round((done/ct.length)*100) : 0;
+    return `<div style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;">
+        <span style="font-weight:600;">${c.code}</span>
+        <span class="mono" style="color:var(--chalk-dim);">${done}/${ct.length}</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${courseColor(c.id)};"></div></div>
+    </div>`;
+  }).join('') || `<div class="empty-state" style="padding:14px 0;">No courses added yet.</div>`;
+
+  // warnings
+  const wTasks = state.tasks.filter(t=>!t.completed && t.deadline).map(t=>({...t,_type:'task', _date:t.deadline}));
+  const wRem = state.reminders.filter(r=>!r.done).map(r=>({...r,_type:'reminder', _date:r.datetime.slice(0,10), title:r.title}));
+  const warnings = [...wTasks, ...wRem].filter(w=>daysBetween(todayISO(), w._date) <= 3).sort((a,b)=> a._date.localeCompare(b._date));
+  const warnHtml = warnings.length ? warnings.map(w=>{
+    const st = deadlineStatus(w._date);
+    const c = w._type==='task'? courseById(w.courseId) : null;
+    return `<div class="task-row">
+      <span class="badge ${st}">${statusLabel(w._date)}</span>
+      <div style="flex:1;">
+        <div class="task-title">${w.title}</div>
+        <div class="task-sub">${w._type==='task'? (c?c.code+' · ':'')+'Task' : 'Reminder'}</div>
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty" style="padding:6px 0;">No urgent deadlines or reminders — you're all clear 🍃</div>`;
+
+  return `
+    <div class="topbar">
+      <div><h1>${state.profile.name? 'Hi, '+state.profile.name.split(' ')[0] : 'Dashboard'}</h1><div class="sub">${new Date().toLocaleDateString('en-US',{weekday:'long', day:'numeric', month:'long'})}${state.profile.department||state.profile.university? ' · '+[state.profile.department,state.profile.university].filter(Boolean).join(', ') : ''}</div></div>
+    </div>
+    <div class="grid2">
+      <div>
+        ${semProgress}
+        <div class="card">
+          <p class="card-title">Warnings & upcoming deadlines</p>
+          ${warnHtml}
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <p class="card-title">Today's classes</p>
+          ${timelineHtml}
+        </div>
+        <div class="card">
+          <p class="card-title">Task progress by course</p>
+          ${courseCards}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Setup ---------------- */
+function renderSetup(){
+  const sem = state.semester;
+  const courseRows = state.courses.map((c,i)=>`
+    <div class="task-row">
+      <span class="chip-swatch" style="background:${courseColor(c.id)}; width:11px; height:11px;"></span>
+      <div style="flex:1;">
+        <div class="task-title">${c.code}</div>
+        <div class="task-sub">${c.name}</div>
+      </div>
+      <button class="btn btn-icon btn-ghost" onclick="editCourse('${c.id}')">${ICONS.edit}</button>
+      <button class="btn btn-icon btn-danger" onclick="deleteCourse('${c.id}')">${ICONS.trash}</button>
+    </div>`).join('') || `<div class="empty">No courses added yet.</div>`;
+
+  const p = state.profile;
+  return `
+    <div class="topbar"><div><h1>Semester Setup</h1><div class="sub">Add your profile, semester details, and courses</div></div></div>
+    <div class="card">
+      <p class="card-title">Profile</p>
+      <div class="profile-header">
+        <div class="avatar-lg" id="avatarPreview">${brandContent()}</div>
+        <div>
+          <div class="profile-name">${p.name || 'Your name'}</div>
+          <div class="profile-sub">${[p.department, p.university].filter(Boolean).join(' · ') || 'Department · University'}</div>
+          <div class="avatar-actions">
+            <label class="btn btn-ghost btn-sm">
+              Upload photo
+              <input type="file" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
+            </label>
+            ${p.photo? `<button class="btn btn-danger btn-sm" onclick="removePhoto()">Remove</button>`:''}
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:16px;">
+        <div class="field"><label>Your name</label><input id="profName" value="${p.name||''}" placeholder="e.g. Al Hossain"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Department</label><input id="profDept" value="${p.department||''}" placeholder="e.g. Dept. of CSE"></div>
+        <div class="field"><label>University</label><input id="profUni" value="${p.university||''}" placeholder="e.g. XYZ University"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveProfile()">Save profile</button>
+    </div>
+    <div class="card">
+      <p class="card-title">Semester details</p>
+      <div class="field"><label>Semester name</label><input id="semName" value="${sem.name||''}" placeholder="e.g. Spring 2026"></div>
+      <div class="row">
+        <div class="field"><label>Start date</label><input type="date" id="semStart" value="${sem.start||''}"></div>
+        <div class="field"><label>End date</label><input type="date" id="semEnd" value="${sem.end||''}"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveSemester()">Save</button>
+    </div>
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <p class="card-title" style="margin:0;">Courses</p>
+        <button class="btn btn-primary btn-sm" onclick="openCourseModal()">${ICONS.plus} Add course</button>
+      </div>
+      ${courseRows}
+    </div>
+  `;
+}
+function saveProfile(){
+  state.profile.name = document.getElementById('profName').value.trim();
+  state.profile.department = document.getElementById('profDept').value.trim();
+  state.profile.university = document.getElementById('profUni').value.trim();
+  save(); toast('Profile saved'); render();
+}
+function handlePhotoUpload(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ toast('Please choose an image file'); return; }
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const size = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const scale = Math.max(size/img.width, size/img.height);
+      const w = img.width*scale, h = img.height*scale;
+      ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
+      state.profile.photo = canvas.toDataURL('image/jpeg', 0.85);
+      save(); toast('Photo updated'); render();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  evt.target.value = '';
+}
+function removePhoto(){
+  state.profile.photo = '';
+  save(); toast('Photo removed'); render();
+}
+function saveSemester(){
+  state.semester = {
+    name: document.getElementById('semName').value.trim(),
+    start: document.getElementById('semStart').value,
+    end: document.getElementById('semEnd').value,
+  };
+  save(); toast('Semester details saved'); render();
+}
+function openCourseModal(id){
+  const c = id? courseById(id) : {code:'',name:''};
+  openModal(`
+    <h3>${id?'Edit Course':'Add New Course'}</h3>
+    <div class="field"><label>Course code</label><input id="mCourseCode" value="${c.code}" placeholder="e.g. CSE 3105"></div>
+    <div class="field"><label>Course name</label><input id="mCourseName" value="${c.name}" placeholder="e.g. Data Structures"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCourse('${id||''}')">Save</button>
+    </div>
+  `);
+}
+function editCourse(id){ openCourseModal(id); }
+function saveCourse(id){
+  const code = document.getElementById('mCourseCode').value.trim();
+  const name = document.getElementById('mCourseName').value.trim();
+  if(!code || !name){ toast('Please enter both course code and name'); return; }
+  if(id){
+    const c = courseById(id); c.code=code; c.name=name;
+  } else {
+    state.courses.push({id:uid(), code, name});
+  }
+  save(); closeModal(); toast('Course saved'); render();
+}
+function deleteCourse(id){
+  if(!confirm('Deleting this course will also remove its routine slots and tasks. Continue?')) return;
+  state.courses = state.courses.filter(c=>c.id!==id);
+  state.routine = state.routine.filter(r=>r.courseId!==id);
+  state.tasks = state.tasks.filter(t=>t.courseId!==id);
+  save(); toast('Course deleted'); render();
+}
+
+/* ---------------- Routine ---------------- */
+function renderRoutine(){
+  if(state.courses.length===0){
+    return `<div class="topbar"><h1>Routine</h1></div><div class="card empty-state">Add at least one course from Semester Setup first.<br><button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="setTab('setup')">Add course</button></div>`;
+  }
+  const toggleHtml = `
+    <div class="chips">
+      <span class="chip ${routineView==='today'?'active':''}" style="cursor:pointer;" onclick="routineView='today'; render();">Today's classes</span>
+      <span class="chip ${routineView==='full'?'active':''}" style="cursor:pointer;" onclick="routineView='full'; render();">Full routine</span>
+    </div>`;
+
+  let body;
+  if(routineView==='today'){
+    const dIdx = todayDayIndex();
+    const todays = state.routine.filter(r=>r.day===dIdx).sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
+    body = `<div class="card"><p class="card-title">${DAYS[dIdx]} — Today's classes</p>
+      ${todays.length? todays.map(r=>slotHtml(r)).join('') : `<div class="empty">No classes today.</div>`}
+    </div>`;
+  } else {
+    body = DAYS.map((d,i)=>{
+      const items = state.routine.filter(r=>r.day===i).sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
+      if(items.length===0) return '';
+      return `<div class="day-block"><div class="day-head">${d}</div>${items.map(r=>slotHtml(r)).join('')}</div>`;
+    }).join('') || `<div class="empty">No classes added yet.</div>`;
+    body = `<div class="card">${body}</div>`;
+  }
+
+  return `
+    <div class="topbar">
+      <div><h1>Routine</h1><div class="sub">Weekly class schedule</div></div>
+      <button class="btn btn-primary" onclick="openSlotModal()">${ICONS.plus} Add class</button>
+    </div>
+    ${toggleHtml}
+    ${body}
+  `;
+}
+function slotHtml(r){
+  const c = courseById(r.courseId);
+  return `<div class="class-slot" style="border-left-color:${courseColor(r.courseId)};">
+    <div>
+      <div class="ct">${c? c.code : '—'}</div>
+      <div class="cm">${c? c.name:''}${r.room? ' · Room '+r.room:''}</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div class="time">${r.start}–${r.end}</div>
+      <button class="btn btn-icon btn-ghost" onclick="openSlotModal('${r.id}')">${ICONS.edit}</button>
+      <button class="btn btn-icon btn-danger" onclick="deleteSlot('${r.id}')">${ICONS.trash}</button>
+    </div>
+  </div>`;
+}
+function openSlotModal(id){
+  const r = id? state.routine.find(x=>x.id===id) : {courseId:state.courses[0]?.id, day:todayDayIndex(), start:'', end:'', room:''};
+  const courseOpts = state.courses.map(c=>`<option value="${c.id}" ${r.courseId===c.id?'selected':''}>${c.code} — ${c.name}</option>`).join('');
+  const dayOpts = DAYS.map((d,i)=>`<option value="${i}" ${r.day===i?'selected':''}>${d}</option>`).join('');
+  openModal(`
+    <h3>${id?'Edit Class':'Add Class'}</h3>
+    <div class="field"><label>Course</label><select id="mSlotCourse">${courseOpts}</select></div>
+    <div class="field"><label>Day</label><select id="mSlotDay">${dayOpts}</select></div>
+    <div class="row">
+      <div class="field"><label>Start time</label><input type="time" id="mSlotStart" value="${r.start||''}"></div>
+      <div class="field"><label>End time</label><input type="time" id="mSlotEnd" value="${r.end||''}"></div>
+    </div>
+    <div class="field"><label>Room (optional)</label><input id="mSlotRoom" value="${r.room||''}" placeholder="e.g. 304"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSlot('${id||''}')">Save</button>
+    </div>
+  `);
+}
+function saveSlot(id){
+  const courseId = document.getElementById('mSlotCourse').value;
+  const day = Number(document.getElementById('mSlotDay').value);
+  const start = document.getElementById('mSlotStart').value;
+  const end = document.getElementById('mSlotEnd').value;
+  const room = document.getElementById('mSlotRoom').value.trim();
+  if(!start || !end){ toast('Please enter start and end time'); return; }
+  if(id){
+    const r = state.routine.find(x=>x.id===id);
+    Object.assign(r, {courseId, day, start, end, room});
+  } else {
+    state.routine.push({id:uid(), courseId, day, start, end, room});
+  }
+  save(); closeModal(); toast('Routine saved'); render();
+}
+function deleteSlot(id){
+  if(!confirm('Remove this class from the routine?')) return;
+  state.routine = state.routine.filter(r=>r.id!==id);
+  save(); render();
+}
+
+/* ---------------- Tasks ---------------- */
+function renderTasks(){
+  if(state.courses.length===0){
+    return `<div class="topbar"><h1>Tasks</h1></div><div class="card empty-state">Add at least one course from Semester Setup first.<br><button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="setTab('setup')">Add course</button></div>`;
+  }
+  const sem = state.semester;
+  const daysLeft = sem.end ? Math.max(daysBetween(todayISO(), sem.end),0) : null;
+
+  const chipsHtml = `<div class="chips">
+    <span class="chip ${taskFilterCourse==='all'?'active':''}" style="cursor:pointer;" onclick="taskFilterCourse='all'; render();">All courses</span>
+    ${state.courses.map(c=>`<span class="chip ${taskFilterCourse===c.id?'active':''}" style="cursor:pointer;" onclick="taskFilterCourse='${c.id}'; render();"><span class="chip-swatch" style="background:${courseColor(c.id)};"></span>${c.code}</span>`).join('')}
+  </div>`;
+
+  const coursesToShow = taskFilterCourse==='all'? state.courses : state.courses.filter(c=>c.id===taskFilterCourse);
+  const courseSections = coursesToShow.map(c=>{
+    const ts = state.tasks.filter(t=>t.courseId===c.id).sort((a,b)=>{
+      if(a.completed!==b.completed) return a.completed?1:-1;
+      if(a.deadline && b.deadline) return a.deadline.localeCompare(b.deadline);
+      if(a.deadline) return -1; if(b.deadline) return 1;
+      return 0;
+    });
+    const done = ts.filter(t=>t.completed).length;
+    const pct = ts.length? Math.round((done/ts.length)*100) : 0;
+    const rows = ts.map(t=>{
+      const st = t.deadline? deadlineStatus(t.deadline) : null;
+      return `<div class="task-row">
+        <div class="task-check ${t.completed?'checked':''}" onclick="toggleTask('${t.id}')">${t.completed?ICONS.check:''}</div>
+        <div style="flex:1;">
+          <div class="task-title ${t.completed?'done':''}">${t.title}</div>
+          <div class="task-sub">${t.type}${t.deadline? ' · '+fmtDate(t.deadline):''}</div>
+        </div>
+        ${st && !t.completed? `<span class="badge ${st}">${statusLabel(t.deadline)}</span>`:''}
+        <button class="btn btn-icon btn-ghost" onclick="openTaskModal('${t.id}')">${ICONS.edit}</button>
+        <button class="btn btn-icon btn-danger" onclick="deleteTask('${t.id}')">${ICONS.trash}</button>
+      </div>`;
+    }).join('') || `<div class="empty">No tasks yet for this course.</div>`;
+    return `<div class="card course-card" style="border-left-color:${courseColor(c.id)};">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div>
+          <div style="font-weight:700; font-size:15px;">${c.code} <span style="color:var(--chalk-dim); font-weight:400;">— ${c.name}</span></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openTaskModal(null,'${c.id}')">${ICONS.plus} Task</button>
+      </div>
+      <div class="progress-track" style="margin-bottom:4px;"><div class="progress-fill" style="width:${pct}%; background:${courseColor(c.id)};"></div></div>
+      <div class="hint" style="margin-bottom:10px;">${done}/${ts.length} completed · ${pct}%</div>
+      ${rows}
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="topbar">
+      <div><h1>Tasks</h1><div class="sub">${daysLeft!==null? `${daysLeft} days left in the semester`:'Track work by course'}</div></div>
+    </div>
+    ${chipsHtml}
+    ${courseSections}
+  `;
+}
+function toggleTask(id){
+  const t = state.tasks.find(x=>x.id===id);
+  t.completed = !t.completed;
+  save(); render();
+}
+function openTaskModal(id, presetCourseId){
+  const t = id? state.tasks.find(x=>x.id===id) : {courseId:presetCourseId||state.courses[0]?.id, title:'', type:TASK_TYPES[0], deadline:''};
+  const courseOpts = state.courses.map(c=>`<option value="${c.id}" ${t.courseId===c.id?'selected':''}>${c.code} — ${c.name}</option>`).join('');
+  const typeOpts = TASK_TYPES.map(ty=>`<option value="${ty}" ${t.type===ty?'selected':''}>${ty}</option>`).join('');
+  openModal(`
+    <h3>${id?'Edit Task':'New Task'}</h3>
+    <div class="field"><label>Course</label><select id="mTaskCourse">${courseOpts}</select></div>
+    <div class="field"><label>Task title</label><input id="mTaskTitle" value="${t.title}" placeholder="e.g. Prepare Mid-1 questions"></div>
+    <div class="field"><label>Type</label><select id="mTaskType">${typeOpts}</select></div>
+    <div class="field"><label>Deadline (optional)</label><input type="date" id="mTaskDeadline" value="${t.deadline||''}"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTask('${id||''}')">Save</button>
+    </div>
+  `);
+}
+function saveTask(id){
+  const courseId = document.getElementById('mTaskCourse').value;
+  const title = document.getElementById('mTaskTitle').value.trim();
+  const type = document.getElementById('mTaskType').value;
+  const deadline = document.getElementById('mTaskDeadline').value;
+  if(!title){ toast('Please enter a task title'); return; }
+  if(id){
+    const t = state.tasks.find(x=>x.id===id);
+    Object.assign(t, {courseId, title, type, deadline});
+  } else {
+    state.tasks.push({id:uid(), courseId, title, type, deadline, completed:false});
+  }
+  save(); closeModal(); toast('Task saved'); render();
+}
+function deleteTask(id){
+  if(!confirm('Delete this task?')) return;
+  state.tasks = state.tasks.filter(t=>t.id!==id);
+  save(); render();
+}
+
+/* ---------------- Reminders ---------------- */
+function renderReminders(){
+  const rs = [...state.reminders].sort((a,b)=>{
+    if(a.done!==b.done) return a.done?1:-1;
+    return a.datetime.localeCompare(b.datetime);
+  });
+  const rows = rs.map(r=>{
+    const dateOnly = r.datetime.slice(0,10);
+    const st = deadlineStatus(dateOnly);
+    return `<div class="task-row">
+      <div class="task-check ${r.done?'checked':''}" onclick="toggleReminder('${r.id}')">${r.done?ICONS.check:''}</div>
+      <div style="flex:1;">
+        <div class="task-title ${r.done?'done':''}">${r.title}</div>
+        <div class="task-sub">${new Date(r.datetime).toLocaleString('en-US',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${r.note? ' · '+r.note:''}</div>
+      </div>
+      ${st && !r.done? `<span class="badge ${st}">${statusLabel(dateOnly)}</span>`:''}
+      <button class="btn btn-icon btn-ghost" onclick="openReminderModal('${r.id}')">${ICONS.edit}</button>
+      <button class="btn btn-icon btn-danger" onclick="deleteReminder('${r.id}')">${ICONS.trash}</button>
+    </div>`;
+  }).join('') || `<div class="empty-state">No reminders added yet.</div>`;
+
+  return `
+    <div class="topbar">
+      <div><h1>Reminders</h1><div class="sub">Meetings, material uploads, or student follow-ups</div></div>
+      <button class="btn btn-primary" onclick="openReminderModal()">${ICONS.plus} Add reminder</button>
+    </div>
+    <div class="card">${rows}</div>
+  `;
+}
+function toggleReminder(id){
+  const r = state.reminders.find(x=>x.id===id);
+  r.done = !r.done;
+  save(); render();
+}
+function openReminderModal(id){
+  const r = id? state.reminders.find(x=>x.id===id) : {title:'', datetime:'', note:''};
+  openModal(`
+    <h3>${id?'Edit Reminder':'New Reminder'}</h3>
+    <div class="field"><label>Title</label><input id="mRemTitle" value="${r.title}" placeholder="e.g. Department meeting"></div>
+    <div class="field"><label>Date & time</label><input type="datetime-local" id="mRemDatetime" value="${r.datetime||''}"></div>
+    <div class="field"><label>Note (optional)</label><textarea id="mRemNote" placeholder="Details...">${r.note||''}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveReminder('${id||''}')">Save</button>
+    </div>
+  `);
+}
+function saveReminder(id){
+  const title = document.getElementById('mRemTitle').value.trim();
+  const datetime = document.getElementById('mRemDatetime').value;
+  const note = document.getElementById('mRemNote').value.trim();
+  if(!title || !datetime){ toast('Please enter a title and date/time'); return; }
+  if(id){
+    const r = state.reminders.find(x=>x.id===id);
+    Object.assign(r, {title, datetime, note});
+  } else {
+    state.reminders.push({id:uid(), title, datetime, note, done:false});
+  }
+  save(); closeModal(); toast('Reminder saved'); render();
+}
+function deleteReminder(id){
+  if(!confirm('Delete this reminder?')) return;
+  state.reminders = state.reminders.filter(r=>r.id!==id);
+  save(); render();
+}
+
+/* ---------------- Data / Export ---------------- */
+function renderData(){
+  return `
+    <div class="topbar"><div><h1>Export & Backup</h1><div class="sub">Export/import your data to use it on another browser or device</div></div></div>
+    <div class="card">
+      <p class="card-title">Why is this needed?</p>
+      <div class="hint" style="font-size:13px; color:var(--chalk-dim);">
+        This app stores data in your browser's local storage — meaning your data lives only on this browser and this device. To use it on both your phone and laptop, or to avoid losing data if your browser is reset, export a JSON file regularly and import it on the other device.
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <p class="card-title">JSON export / import</p>
+        <button class="btn btn-primary" style="width:100%; margin-bottom:10px;" onclick="exportJSON()">📦 Download JSON file</button>
+        <label class="btn btn-ghost" style="width:100%; display:block; text-align:center; box-sizing:border-box;">
+          📥 Import JSON file
+          <input type="file" accept="application/json" style="display:none;" onchange="importJSON(event)">
+        </label>
+        <div class="hint">Importing will replace all current data.</div>
+      </div>
+      <div class="card">
+        <p class="card-title">PDF export</p>
+        <button class="btn btn-primary" style="width:100%;" onclick="exportPDF()">🖨️ Print / Save as PDF</button>
+        <div class="hint">Choose "Save as PDF" in the print dialog. Includes semester info, routine, task progress, and reminders.</div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="card-title" style="color:var(--danger);">Danger zone</p>
+      <button class="btn btn-danger" onclick="clearAllData()">Delete all data</button>
+    </div>
+  `;
+}
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const fname = (state.semester.name || 'classboard').replace(/[^a-zA-Z0-9_-]/g,'_');
+  a.href = url; a.download = `classboard_${fname}_${todayISO()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast('JSON file downloaded');
+}
+function importJSON(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!data.courses || !data.tasks) throw new Error('invalid');
+      if(!confirm('All current data will be replaced. Continue?')) return;
+      state = Object.assign(defaultData(), data);
+      save(); toast('Data imported successfully'); render();
+    }catch(err){ toast('This file is not valid'); }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+function clearAllData(){
+  if(!confirm('Are you sure you want to delete all data? This cannot be undone.')) return;
+  if(!confirm('Final confirmation — all semesters, courses, routine, tasks, and reminders will be deleted.')) return;
+  state = defaultData(); save(); toast('All data deleted'); render();
+}
+function exportPDF(){
+  const sem = state.semester, p = state.profile;
+  let html = `<h1>${sem.name || 'Semester Planner'}</h1>`;
+  if(p.name || p.department || p.university){
+    html += `<p><b>${p.name||''}</b>${p.department? ' · '+p.department:''}${p.university? ' · '+p.university:''}</p>`;
+  }
+  html += `<p>${fmtDate(sem.start)} — ${fmtDate(sem.end)}</p>`;
+  html += `<h2>Routine</h2><table><tr><th>Day</th><th>Time</th><th>Course</th><th>Room</th></tr>`;
+  DAYS.forEach((d,i)=>{
+    state.routine.filter(r=>r.day===i).sort((a,b)=>toMinutes(a.start)-toMinutes(b.start)).forEach(r=>{
+      const c = courseById(r.courseId);
+      html += `<tr><td>${d}</td><td>${r.start}-${r.end}</td><td>${c?c.code+' '+c.name:''}</td><td>${r.room||''}</td></tr>`;
+    });
+  });
+  html += `</table>`;
+  html += `<h2>Task Progress</h2>`;
+  state.courses.forEach(c=>{
+    const ts = state.tasks.filter(t=>t.courseId===c.id);
+    const done = ts.filter(t=>t.completed).length;
+    html += `<div class="p-course"><b>${c.code} — ${c.name}</b> (${done}/${ts.length} completed)<table><tr><th>Task</th><th>Type</th><th>Deadline</th><th>Status</th></tr>`;
+    ts.forEach(t=>{
+      html += `<tr><td>${t.title}</td><td>${t.type}</td><td>${t.deadline?fmtDate(t.deadline):'-'}</td><td>${t.completed?'Completed':'Pending'}</td></tr>`;
+    });
+    html += `</table></div>`;
+  });
+  html += `<h2>Reminders</h2><table><tr><th>Title</th><th>Date & Time</th><th>Status</th></tr>`;
+  state.reminders.forEach(r=>{
+    html += `<tr><td>${r.title}</td><td>${new Date(r.datetime).toLocaleString('en-US')}</td><td>${r.done?'Done':'Pending'}</td></tr>`;
+  });
+  html += `</table>`;
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(()=>window.print(), 100);
+}
+
+/* ---------------- Init ---------------- */
+render();
+</script>
+</body>
+</html>
