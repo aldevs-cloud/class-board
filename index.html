@@ -360,10 +360,12 @@ const STORAGE_KEY = 'classboardData_v1';
 const THEME_KEY = 'classboardTheme';
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const COURSE_COLOR_VARS = ['--c0','--c1','--c2','--c3','--c4','--c5','--c6'];
-const TASK_TYPES = ['Quiz','Midterm Question Prep','Final Question Prep','Assignment','Gradesheet','Class Material','Lab','Other'];
+const TASK_TYPES = ['Theory','Lab'];
+const COURSE_TYPES = [{v:'theory',label:'Theory'},{v:'lab',label:'Lab'}];
+const STUDENT_STATUS = ['Regular','Diploma'];
 
 function defaultData(){
-  return { profile:{name:'',department:'',university:'',photo:''}, semester:{name:'',start:'',end:''}, courses:[], routine:[], tasks:[], reminders:[] };
+  return { profile:{name:'',department:'',university:'',photo:''}, semester:{name:'',start:'',end:''}, courses:[], routine:[], tasks:[], reminders:[], students:[], grades:[] };
 }
 function load(){
   try{
@@ -380,6 +382,8 @@ let state = load();
 let activeTab = 'dashboard';
 let routineView = 'today'; // 'today' | 'full'
 let taskFilterCourse = 'all';
+let studentFilterCourse = 'all';
+let gradingFilterCourse = 'all';
 
 /* ---------------- Theme ---------------- */
 function loadTheme(){
@@ -569,7 +573,9 @@ const ICONS = {
   moon:'<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>',
   clock:'<svg viewBox="0 0 24 24" width="15" height="15" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
   copy:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>',
-  grading:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>'
+  grading:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
+  students:'<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+  deleteAll:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>'
 };
 
 /* ---------------- Navigation ---------------- */
@@ -578,6 +584,8 @@ const TABS = [
   {id:'setup', label:'Semester'},
   {id:'routine', label:'Routine'},
   {id:'tasks', label:'Tasks'},
+  {id:'students', label:'Students'},
+  {id:'grading', label:'Grading'},
   {id:'reminders', label:'Reminders'},
   {id:'data', label:'Export'},
 ];
@@ -611,6 +619,8 @@ function render(){
   else if(activeTab==='setup') main.innerHTML = renderSetup();
   else if(activeTab==='routine') main.innerHTML = renderRoutine();
   else if(activeTab==='tasks') main.innerHTML = renderTasks();
+  else if(activeTab==='students') main.innerHTML = renderStudents();
+  else if(activeTab==='grading') main.innerHTML = renderGrading();
   else if(activeTab==='reminders') main.innerHTML = renderReminders();
   else if(activeTab==='data') main.innerHTML = renderData();
 }
@@ -714,27 +724,31 @@ function renderDashboard(){
 }
 
 /* ---------------- Setup ---------------- */
+function buildCourseRow(c){
+  const gc = c.gradingCourse||[], gl = c.gradingLab||[];
+  const tags = [
+    ...gc.map(g=>`<span class="grading-tag">${g.name}${g.attempts>1?' (avg of '+g.attempts+')':''}: <b>${g.weight}</b></span>`),
+    ...(c.hasLab? gl.map(g=>`<span class="grading-tag lab">Lab · ${g.name}${g.attempts>1?' (avg of '+g.attempts+')':''}: <b>${g.weight}</b></span>`) : [])
+  ].join('');
+  return `
+  <div class="task-row" style="align-items:flex-start;">
+    <span class="chip-swatch" style="background:${courseColor(c.id)}; width:11px; height:11px; margin-top:5px;"></span>
+    <div style="flex:1;">
+      <div class="task-title">${c.code}</div>
+      <div class="task-sub">${c.name}</div>
+      ${tags? `<div class="grading-summary">${tags}</div>` : `<div class="hint" style="margin-top:6px;">No grading criteria set yet.</div>`}
+    </div>
+    <button class="btn btn-icon btn-ghost" onclick="openGradingModal('${c.id}')" title="Grading criteria">${ICONS.grading}</button>
+    <button class="btn btn-icon btn-ghost" onclick="editCourse('${c.id}')">${ICONS.edit}</button>
+    <button class="btn btn-icon btn-danger" onclick="deleteCourse('${c.id}')">${ICONS.trash}</button>
+  </div>`;
+}
 function renderSetup(){
   const sem = state.semester;
-  const courseRows = state.courses.map((c,i)=>{
-    const gc = c.gradingCourse||[], gl = c.gradingLab||[];
-    const tags = [
-      ...gc.map(g=>`<span class="grading-tag">${g.name}: <b>${g.weight}%</b></span>`),
-      ...(c.hasLab? gl.map(g=>`<span class="grading-tag lab">Lab · ${g.name}: <b>${g.weight}%</b></span>`) : [])
-    ].join('');
-    return `
-    <div class="task-row" style="align-items:flex-start;">
-      <span class="chip-swatch" style="background:${courseColor(c.id)}; width:11px; height:11px; margin-top:5px;"></span>
-      <div style="flex:1;">
-        <div class="task-title">${c.code}</div>
-        <div class="task-sub">${c.name}</div>
-        ${tags? `<div class="grading-summary">${tags}</div>` : `<div class="hint" style="margin-top:6px;">No grading criteria set yet.</div>`}
-      </div>
-      <button class="btn btn-icon btn-ghost" onclick="openGradingModal('${c.id}')" title="Grading criteria">${ICONS.grading}</button>
-      <button class="btn btn-icon btn-ghost" onclick="editCourse('${c.id}')">${ICONS.edit}</button>
-      <button class="btn btn-icon btn-danger" onclick="deleteCourse('${c.id}')">${ICONS.trash}</button>
-    </div>`;
-  }).join('') || `<div class="empty">No courses added yet.</div>`;
+  const theoryCourses = state.courses.filter(c=>(c.type||'theory')!=='lab');
+  const labCourses = state.courses.filter(c=>c.type==='lab');
+  const theoryRows = theoryCourses.map(buildCourseRow).join('') || `<div class="empty">No theory courses added yet.</div>`;
+  const labRows = labCourses.map(buildCourseRow).join('') || `<div class="empty">No lab courses added yet.</div>`;
 
   const p = state.profile;
   return `
@@ -775,10 +789,17 @@ function renderSetup(){
     </div>
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <p class="card-title" style="margin:0;">Courses</p>
-        <button class="btn btn-primary btn-sm" onclick="openCourseModal()">${ICONS.plus} Add course</button>
+        <p class="card-title" style="margin:0;">Theory Courses</p>
+        <button class="btn btn-primary btn-sm" onclick="openCourseModal(null,'theory')">${ICONS.plus} Add theory course</button>
       </div>
-      ${courseRows}
+      ${theoryRows}
+    </div>
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <p class="card-title" style="margin:0;">Lab Courses</p>
+        <button class="btn btn-primary btn-sm" onclick="openCourseModal(null,'lab')">${ICONS.plus} Add lab course</button>
+      </div>
+      ${labRows}
     </div>
   `;
 }
@@ -823,12 +844,14 @@ function saveSemester(){
   };
   save(); toast('Semester details saved'); render();
 }
-function openCourseModal(id){
-  const c = id? courseById(id) : {code:'',name:''};
+function openCourseModal(id, presetType){
+  const c = id? courseById(id) : {code:'',name:'',type:presetType||'theory'};
+  const typeOpts = COURSE_TYPES.map(t=>`<option value="${t.v}" ${(c.type||'theory')===t.v?'selected':''}>${t.label}</option>`).join('');
   openModal(`
     <h3>${id?'Edit Course':'Add New Course'}</h3>
     <div class="field"><label>Course code</label><input id="mCourseCode" value="${c.code}" placeholder="e.g. CSE 3105"></div>
     <div class="field"><label>Course name</label><input id="mCourseName" value="${c.name}" placeholder="e.g. Data Structures"></div>
+    <div class="field"><label>Course type</label><select id="mCourseType">${typeOpts}</select></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" onclick="saveCourse('${id||''}')">Save</button>
@@ -839,19 +862,23 @@ function editCourse(id){ openCourseModal(id); }
 function saveCourse(id){
   const code = document.getElementById('mCourseCode').value.trim();
   const name = document.getElementById('mCourseName').value.trim();
+  const type = document.getElementById('mCourseType').value;
   if(!code || !name){ toast('Please enter both course code and name'); return; }
   if(id){
-    const c = courseById(id); c.code=code; c.name=name;
+    const c = courseById(id); c.code=code; c.name=name; c.type=type;
   } else {
-    state.courses.push({id:uid(), code, name});
+    state.courses.push({id:uid(), code, name, type});
   }
   save(); closeModal(); toast('Course saved'); render();
 }
+function courseTypeLabel(c){ return (c.type==='lab')? 'Lab' : 'Theory'; }
 function deleteCourse(id){
-  if(!confirm('Deleting this course will also remove its routine slots and tasks. Continue?')) return;
+  if(!confirm('Deleting this course will also remove its routine slots, tasks, students, and grading data. Continue?')) return;
   state.courses = state.courses.filter(c=>c.id!==id);
   state.routine = state.routine.filter(r=>r.courseId!==id);
   state.tasks = state.tasks.filter(t=>t.courseId!==id);
+  state.students = state.students.filter(s=>s.courseId!==id);
+  state.grades = state.grades.filter(g=>g.courseId!==id);
   save(); toast('Course deleted'); render();
 }
 
@@ -862,8 +889,8 @@ function openGradingModal(courseId){
   gradingDraft = {
     courseId,
     hasLab: !!c.hasLab,
-    course: (c.gradingCourse||[]).map(g=>({...g})),
-    lab: (c.gradingLab||[]).map(g=>({...g}))
+    course: (c.gradingCourse||[]).map(g=>({...g, attempts:g.attempts||1})),
+    lab: (c.gradingLab||[]).map(g=>({...g, attempts:g.attempts||1}))
   };
   openModal(gradingModalHtml());
 }
@@ -871,12 +898,16 @@ function gradingRowsHtml(list, kind){
   return list.map((g,i)=>`
     <div class="row" style="align-items:flex-end;">
       <div class="field" style="flex:2; margin-bottom:8px;">
-        ${i===0?'<label>Component</label>':''}
-        <input value="${g.name}" placeholder="e.g. Midterm" oninput="gradingDraft.${kind}[${i}].name=this.value">
+        ${i===0?'<label>Task / component name</label>':''}
+        <input value="${g.name}" placeholder="e.g. Quiz" oninput="gradingDraft.${kind}[${i}].name=this.value">
       </div>
       <div class="field" style="flex:1; margin-bottom:8px;">
-        ${i===0?'<label>Weight %</label>':''}
-        <input type="number" min="0" max="100" value="${g.weight}" oninput="gradingDraft.${kind}[${i}].weight=this.value; updateGradingTotal('${kind}');">
+        ${i===0?'<label>Marks (out of)</label>':''}
+        <input type="number" min="0" value="${g.weight}" oninput="gradingDraft.${kind}[${i}].weight=this.value; updateGradingTotal('${kind}');">
+      </div>
+      <div class="field" style="flex:1; margin-bottom:8px;">
+        ${i===0?'<label>Attempts</label>':''}
+        <input type="number" min="1" value="${g.attempts||1}" title="If more than 1, the average of all attempts is used (e.g. 3 quizzes averaged into one final quiz mark)" oninput="gradingDraft.${kind}[${i}].attempts=this.value">
       </div>
       <button class="btn btn-icon btn-danger" style="margin-bottom:8px;" onclick="removeGradingRow('${kind}',${i})">${ICONS.trash}</button>
     </div>`).join('') || `<div class="empty" style="padding:4px 0;">No grading components added.</div>`;
@@ -890,10 +921,11 @@ function gradingModalHtml(){
   const totalL = gradingTotal('lab');
   return `
     <h3>Grading Criteria — ${c.code}</h3>
+    <div class="hint" style="margin-top:0; margin-bottom:12px;">Define which tasks carry how many marks. Set "Attempts" above 1 for things like quizzes — e.g. 3 attempts, 10 marks each — and the student grading table will average the attempts into one final mark out of 10. This becomes the basis of the student grading table for this course.</div>
     <p class="card-title" style="margin-top:0;">Course grading</p>
     <div id="gradingRowsCourse">${gradingRowsHtml(gradingDraft.course,'course')}</div>
     <button class="btn btn-ghost btn-sm" onclick="addGradingRow('course')">${ICONS.plus} Add component</button>
-    <div class="hint" id="gradingTotalCourse" style="color:${totalC===100?'var(--green)':'var(--amber)'};">Total: ${totalC}%${totalC===100?' ✓':' (should total 100%)'}</div>
+    <div class="hint" id="gradingTotalCourse">Total marks: ${totalC}</div>
 
     <div class="field" style="margin-top:18px; display:flex; align-items:center; gap:8px;">
       <input type="checkbox" id="mHasLab" style="width:auto;" ${gradingDraft.hasLab?'checked':''} onchange="gradingDraft.hasLab=this.checked; openModal(gradingModalHtml());">
@@ -903,7 +935,7 @@ function gradingModalHtml(){
       <p class="card-title">Lab grading</p>
       <div id="gradingRowsLab">${gradingRowsHtml(gradingDraft.lab,'lab')}</div>
       <button class="btn btn-ghost btn-sm" onclick="addGradingRow('lab')">${ICONS.plus} Add component</button>
-      <div class="hint" id="gradingTotalLab" style="color:${totalL===100?'var(--green)':'var(--amber)'};">Total: ${totalL}%${totalL===100?' ✓':' (should total 100%)'}</div>
+      <div class="hint" id="gradingTotalLab">Total marks: ${totalL}</div>
     `:''}
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
@@ -915,11 +947,10 @@ function updateGradingTotal(kind){
   const el = document.getElementById(kind==='course'?'gradingTotalCourse':'gradingTotalLab');
   if(!el) return;
   const total = gradingTotal(kind);
-  el.textContent = `Total: ${total}%${total===100?' ✓':' (should total 100%)'}`;
-  el.style.color = total===100? 'var(--green)':'var(--amber)';
+  el.textContent = `Total marks: ${total}`;
 }
 function addGradingRow(kind){
-  gradingDraft[kind].push({name:'',weight:0});
+  gradingDraft[kind].push({name:'',weight:0,attempts:1});
   openModal(gradingModalHtml());
 }
 function removeGradingRow(kind,i){
@@ -928,9 +959,9 @@ function removeGradingRow(kind,i){
 }
 function saveGrading(){
   const c = courseById(gradingDraft.courseId);
-  c.gradingCourse = gradingDraft.course.filter(g=>String(g.name).trim()!=='').map(g=>({name:String(g.name).trim(), weight:Number(g.weight)||0}));
+  c.gradingCourse = gradingDraft.course.filter(g=>String(g.name).trim()!=='').map(g=>({name:String(g.name).trim(), weight:Number(g.weight)||0, attempts:Math.max(1,Number(g.attempts)||1)}));
   c.hasLab = gradingDraft.hasLab;
-  c.gradingLab = gradingDraft.hasLab? gradingDraft.lab.filter(g=>String(g.name).trim()!=='').map(g=>({name:String(g.name).trim(), weight:Number(g.weight)||0})) : [];
+  c.gradingLab = gradingDraft.hasLab? gradingDraft.lab.filter(g=>String(g.name).trim()!=='').map(g=>({name:String(g.name).trim(), weight:Number(g.weight)||0, attempts:Math.max(1,Number(g.attempts)||1)})) : [];
   save(); closeModal(); toast('Grading criteria saved'); gradingDraft=null; render();
 }
 
@@ -1113,11 +1144,14 @@ function renderTasks(){
       </div>`;
     }).join('') || `<div class="empty">No tasks yet for this course.</div>`;
     return `<div class="card course-card" style="border-left-color:${courseColor(c.id)};">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
         <div>
-          <div style="font-weight:700; font-size:15px;">${c.code} <span style="color:var(--chalk-dim); font-weight:400;">— ${c.name}</span></div>
+          <div style="font-weight:700; font-size:15px;">${c.code} <span style="color:var(--chalk-dim); font-weight:400;">— ${c.name} · ${courseTypeLabel(c)}</span></div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openTaskModal(null,'${c.id}')">${ICONS.plus} Task</button>
+        <div style="display:flex; gap:8px;">
+          ${ts.length? `<button class="btn btn-danger btn-sm" onclick="deleteAllTasks('${c.id}')">${ICONS.deleteAll} Delete all</button>`:''}
+          <button class="btn btn-primary btn-sm" onclick="openTaskModal(null,'${c.id}')">${ICONS.plus} Task</button>
+        </div>
       </div>
       <div class="progress-track" style="margin-bottom:4px;"><div class="progress-fill" style="width:${pct}%; background:${courseColor(c.id)};"></div></div>
       <div class="hint" style="margin-bottom:10px;">${done}/${ts.length} completed · ${pct}%</div>
@@ -1172,7 +1206,10 @@ function toggleTask(id){
   save(); render();
 }
 function openTaskModal(id, presetCourseId){
-  const t = id? state.tasks.find(x=>x.id===id) : {courseId:presetCourseId||state.courses[0]?.id, title:'', type:TASK_TYPES[0], deadline:''};
+  const defCourseId = presetCourseId||state.courses[0]?.id;
+  const defCourse = courseById(defCourseId);
+  const defType = defCourse && defCourse.type==='lab' ? 'Lab' : 'Theory';
+  const t = id? state.tasks.find(x=>x.id===id) : {courseId:defCourseId, title:'', type:defType, deadline:''};
   const courseOpts = state.courses.map(c=>`<option value="${c.id}" ${t.courseId===c.id?'selected':''}>${c.code} — ${c.name}</option>`).join('');
   const typeOpts = TASK_TYPES.map(ty=>`<option value="${ty}" ${t.type===ty?'selected':''}>${ty}</option>`).join('');
   openModal(`
@@ -1205,6 +1242,346 @@ function deleteTask(id){
   if(!confirm('Delete this task?')) return;
   state.tasks = state.tasks.filter(t=>t.id!==id);
   save(); render();
+}
+function deleteAllTasks(courseId){
+  const c = courseById(courseId);
+  if(!confirm(`Delete ALL tasks for ${c?c.code:'this course'}? This cannot be undone.`)) return;
+  state.tasks = state.tasks.filter(t=>t.courseId!==courseId);
+  save(); toast('All tasks deleted for this course'); render();
+}
+
+/* ---------------- Students ---------------- */
+function renderStudents(){
+  if(state.courses.length===0){
+    return `<div class="topbar"><h1>Students</h1></div><div class="card empty-state">Add at least one course from Semester Setup first.<br><button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="setTab('setup')">Add course</button></div>`;
+  }
+  const chipsHtml = `<div class="chips">
+    <span class="chip ${studentFilterCourse==='all'?'active':''}" style="cursor:pointer;" onclick="studentFilterCourse='all'; render();">All courses</span>
+    ${state.courses.map(c=>`<span class="chip ${studentFilterCourse===c.id?'active':''}" style="cursor:pointer;" onclick="studentFilterCourse='${c.id}'; render();"><span class="chip-swatch" style="background:${courseColor(c.id)};"></span>${c.code}</span>`).join('')}
+  </div>`;
+
+  const coursesToShow = studentFilterCourse==='all'? state.courses : state.courses.filter(c=>c.id===studentFilterCourse);
+  const courseSections = coursesToShow.map(c=>{
+    const ss = state.students.filter(s=>s.courseId===c.id).sort((a,b)=>a.name.localeCompare(b.name));
+    const rows = ss.map(s=>`<tr>
+      <td>${s.name}</td>
+      <td class="mono">${s.studentId||'-'}</td>
+      <td>${s.contact||'-'}</td>
+      <td>${s.semester||'-'}</td>
+      <td>${s.batch||'-'}</td>
+      <td>${s.status||'-'}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-icon btn-ghost" onclick="openStudentModal('${s.id}')">${ICONS.edit}</button>
+        <button class="btn btn-icon btn-danger" onclick="deleteStudent('${s.id}')">${ICONS.trash}</button>
+      </td>
+    </tr>`).join('') || `<tr><td colspan="7"><div class="empty">No students added yet for this course.</div></td></tr>`;
+    return `<div class="card course-card" style="border-left-color:${courseColor(c.id)};">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <div style="font-weight:700; font-size:15px;">${c.code} <span style="color:var(--chalk-dim); font-weight:400;">— ${c.name} · ${courseTypeLabel(c)}</span></div>
+        <div style="display:flex; gap:8px;">
+          ${ss.length? `<button class="btn btn-danger btn-sm" onclick="deleteAllStudents('${c.id}')">${ICONS.deleteAll} Delete all</button>`:''}
+          <button class="btn btn-primary btn-sm" onclick="openStudentModal(null,'${c.id}')">${ICONS.plus} Student</button>
+        </div>
+      </div>
+      <div class="timetable-wrap">
+        <table class="timetable">
+          <tr><th>Name</th><th>ID</th><th>Contact</th><th>Semester</th><th>Batch</th><th>Status</th><th></th></tr>
+          ${rows}
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="topbar">
+      <div><h1>Students</h1><div class="sub">Course-wise student database</div></div>
+      ${state.courses.length>1? `<div class="topbar-actions"><button class="btn btn-ghost" onclick="openCopyStudentsModal()">${ICONS.copy} Copy students</button></div>`:''}
+    </div>
+    ${chipsHtml}
+    ${courseSections}
+  `;
+}
+function openStudentModal(id, presetCourseId){
+  const s = id? state.students.find(x=>x.id===id) : {courseId:presetCourseId||state.courses[0]?.id, name:'', studentId:'', contact:'', semester:'', batch:'', status:STUDENT_STATUS[0]};
+  const courseOpts = state.courses.map(c=>`<option value="${c.id}" ${s.courseId===c.id?'selected':''}>${c.code} — ${c.name}</option>`).join('');
+  const statusOpts = STUDENT_STATUS.map(st=>`<option value="${st}" ${s.status===st?'selected':''}>${st}</option>`).join('');
+  openModal(`
+    <h3>${id?'Edit Student':'Add Student'}</h3>
+    <div class="field"><label>Course</label><select id="mStuCourse">${courseOpts}</select></div>
+    <div class="field"><label>Name</label><input id="mStuName" value="${s.name}" placeholder="e.g. Rahim Uddin"></div>
+    <div class="row">
+      <div class="field"><label>Student ID</label><input id="mStuId" value="${s.studentId||''}" placeholder="e.g. 21-4567-1"></div>
+      <div class="field"><label>Contact no.</label><input id="mStuContact" value="${s.contact||''}" placeholder="e.g. 01XXXXXXXXX"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Semester</label><input id="mStuSemester" value="${s.semester||''}" placeholder="e.g. 5th"></div>
+      <div class="field"><label>Batch</label><input id="mStuBatch" value="${s.batch||''}" placeholder="e.g. 27th"></div>
+    </div>
+    <div class="field"><label>Status</label><select id="mStuStatus">${statusOpts}</select></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStudent('${id||''}')">Save</button>
+    </div>
+  `);
+}
+function saveStudent(id){
+  const courseId = document.getElementById('mStuCourse').value;
+  const name = document.getElementById('mStuName').value.trim();
+  const studentId = document.getElementById('mStuId').value.trim();
+  const contact = document.getElementById('mStuContact').value.trim();
+  const semester = document.getElementById('mStuSemester').value.trim();
+  const batch = document.getElementById('mStuBatch').value.trim();
+  const status = document.getElementById('mStuStatus').value;
+  if(!name){ toast('Please enter the student name'); return; }
+  if(id){
+    const s = state.students.find(x=>x.id===id);
+    Object.assign(s, {courseId, name, studentId, contact, semester, batch, status});
+  } else {
+    state.students.push({id:uid(), courseId, name, studentId, contact, semester, batch, status});
+  }
+  save(); closeModal(); toast('Student saved'); render();
+}
+function deleteStudent(id){
+  if(!confirm('Delete this student?')) return;
+  state.students = state.students.filter(s=>s.id!==id);
+  state.grades.forEach(g=>{ if(g.scores) delete g.scores[id]; });
+  state.grades = state.grades.filter(g=>g.studentId!==id);
+  save(); render();
+}
+function deleteAllStudents(courseId){
+  const c = courseById(courseId);
+  if(!confirm(`Delete ALL students for ${c?c.code:'this course'}? This cannot be undone.`)) return;
+  const ids = state.students.filter(s=>s.courseId===courseId).map(s=>s.id);
+  state.students = state.students.filter(s=>s.courseId!==courseId);
+  state.grades = state.grades.filter(g=>!(g.courseId===courseId && ids.includes(g.studentId)));
+  save(); toast('All students deleted for this course'); render();
+}
+function openCopyStudentsModal(){
+  const opts = state.courses.map(c=>`<option value="${c.id}">${c.code} — ${c.name}</option>`).join('');
+  openModal(`
+    <h3>Copy Students Between Courses</h3>
+    <div class="field"><label>Copy from</label><select id="mCopyStuFrom">${opts}</select></div>
+    <div class="field"><label>Copy to</label><select id="mCopyStuTo">${opts}</select></div>
+    <div class="hint">Useful when a theory course and its lab course share the same students. All students from the source course will be duplicated into the target course. Existing students in the target course are kept.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="copyStudentsBetweenCourses()">Copy students</button>
+    </div>
+  `);
+}
+function copyStudentsBetweenCourses(){
+  const fromId = document.getElementById('mCopyStuFrom').value;
+  const toId = document.getElementById('mCopyStuTo').value;
+  if(fromId===toId){ toast('Please choose two different courses'); return; }
+  const source = state.students.filter(s=>s.courseId===fromId);
+  if(source.length===0){ toast('The source course has no students to copy'); return; }
+  source.forEach(s=>{
+    state.students.push({id:uid(), courseId:toId, name:s.name, studentId:s.studentId, contact:s.contact, semester:s.semester, batch:s.batch, status:s.status});
+  });
+  save(); closeModal(); toast(`${source.length} student(s) copied`); render();
+}
+
+/* ---------------- Student Grading ---------------- */
+const GRADE_SCALE = [
+  {min:80, letter:'A+', gp:4.00},
+  {min:75, letter:'A',  gp:3.75},
+  {min:70, letter:'A-', gp:3.50},
+  {min:65, letter:'B+', gp:3.25},
+  {min:60, letter:'B',  gp:3.00},
+  {min:55, letter:'B-', gp:2.75},
+  {min:50, letter:'C+', gp:2.50},
+  {min:45, letter:'C',  gp:2.25},
+  {min:40, letter:'D',  gp:2.00},
+  {min:0,  letter:'F',  gp:0.00},
+];
+function gradeFromPercent(pct){
+  for(const g of GRADE_SCALE){ if(pct>=g.min) return g; }
+  return GRADE_SCALE[GRADE_SCALE.length-1];
+}
+function round2(n){ return Math.round((Number(n)||0)*100)/100; }
+function gradingColumnsFor(c){
+  function build(list, lab){
+    return list.map((g,i)=>({
+      key:(lab?'l':'c')+i, name:g.name, max:Number(g.weight)||0, lab,
+      attempts: Math.max(1, Number(g.attempts)||1)
+    }));
+  }
+  const cols = build(c.gradingCourse||[], false);
+  if(c.hasLab) cols.push(...build(c.gradingLab||[], true));
+  return cols;
+}
+function getGradeRecord(courseId, studentId, create){
+  let rec = state.grades.find(g=>g.courseId===courseId && g.studentId===studentId);
+  if(!rec && create){ rec = {id:uid(), courseId, studentId, scores:{}}; state.grades.push(rec); }
+  return rec;
+}
+function groupValue(rec, col){
+  if(!rec || !rec.scores) return 0;
+  if(col.attempts<=1){
+    const v = rec.scores[col.key];
+    return v===undefined? 0 : (Number(v)||0);
+  }
+  const vals = [];
+  for(let i=0;i<col.attempts;i++){
+    const v = rec.scores[col.key+'_q'+i];
+    if(v!==undefined && v!=='') vals.push(Number(v));
+  }
+  if(vals.length===0) return 0;
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  return Math.min(col.max, avg);
+}
+function groupAvgDisplay(rec, col){
+  const vals = [];
+  for(let i=0;i<col.attempts;i++){
+    const v = rec && rec.scores ? rec.scores[col.key+'_q'+i] : undefined;
+    if(v!==undefined && v!=='') vals.push(Number(v));
+  }
+  if(vals.length===0) return '-';
+  return round2(vals.reduce((a,b)=>a+b,0)/vals.length);
+}
+function renderGrading(){
+  if(state.courses.length===0){
+    return `<div class="topbar"><h1>Grading</h1></div><div class="card empty-state">Add at least one course from Semester Setup first.<br><button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="setTab('setup')">Add course</button></div>`;
+  }
+  const chipsHtml = `<div class="chips">
+    <span class="chip ${gradingFilterCourse==='all'?'active':''}" style="cursor:pointer;" onclick="gradingFilterCourse='all'; render();">All courses</span>
+    ${state.courses.map(c=>`<span class="chip ${gradingFilterCourse===c.id?'active':''}" style="cursor:pointer;" onclick="gradingFilterCourse='${c.id}'; render();"><span class="chip-swatch" style="background:${courseColor(c.id)};"></span>${c.code}</span>`).join('')}
+  </div>`;
+
+  const coursesToShow = gradingFilterCourse==='all'? state.courses : state.courses.filter(c=>c.id===gradingFilterCourse);
+  const courseSections = coursesToShow.map(c=>{
+    const cols = gradingColumnsFor(c);
+    const ss = state.students.filter(s=>s.courseId===c.id).sort((a,b)=>a.name.localeCompare(b.name));
+    const outOf = cols.reduce((s,col)=>s+col.max,0);
+
+    let body;
+    if(cols.length===0){
+      body = `<div class="empty-state" style="padding:16px 0;">No grading criteria set for this course yet.<br><button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="setTab('setup')">Set up grading criteria</button></div>`;
+    } else if(ss.length===0){
+      body = `<div class="empty-state" style="padding:16px 0;">No students added for this course yet.<br><button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="openStudentModal(null,'${c.id}')">${ICONS.plus} Add student</button></div>`;
+    } else {
+      const headCells = cols.map(col=>{
+        if(col.attempts<=1){
+          return `<th>${col.name}${col.lab?' (Lab)':''}<div class="hint" style="margin:0;">out of ${col.max}</div></th>`;
+        }
+        let h = '';
+        for(let i=0;i<col.attempts;i++){
+          h += `<th>${col.name} Q${i+1}${col.lab?' (Lab)':''}<div class="hint" style="margin:0;">out of ${col.max}</div></th>`;
+        }
+        h += `<th>${col.name} Avg<div class="hint" style="margin:0;">out of ${col.max}</div></th>`;
+        return h;
+      }).join('');
+      const head = `<tr><th>Name</th>${headCells}<th>Total<div class="hint" style="margin:0;">out of ${outOf}</div></th><th>Grade</th></tr>`;
+      const rows = ss.map(s=>{
+        const rec = getGradeRecord(c.id, s.id, false);
+        const cells = cols.map(col=>{
+          if(col.attempts<=1){
+            const v = rec && rec.scores && rec.scores[col.key]!==undefined ? rec.scores[col.key] : '';
+            return `<td><input type="number" min="0" max="${col.max}" value="${v}" style="width:80px;" oninput="setMark('${c.id}','${s.id}','${col.key}',this.value,${col.max})"></td>`;
+          }
+          let tds = '';
+          for(let i=0;i<col.attempts;i++){
+            const v = rec && rec.scores && rec.scores[col.key+'_q'+i]!==undefined ? rec.scores[col.key+'_q'+i] : '';
+            tds += `<td><input type="number" min="0" max="${col.max}" value="${v}" style="width:70px;" oninput="setQuizMark('${c.id}','${s.id}','${col.key}',${i},this.value,${col.max})"></td>`;
+          }
+          tds += `<td class="mono" id="gavg_${s.id}_${col.key}">${groupAvgDisplay(rec, col)}</td>`;
+          return tds;
+        }).join('');
+        const sum = cols.reduce((sAcc,col)=>sAcc+groupValue(rec,col),0);
+        const pct = outOf>0? (sum/outOf)*100 : 0;
+        const gr = gradeFromPercent(pct);
+        return `<tr><td>${s.name}</td>${cells}<td class="mono" id="gt_${s.id}">${round2(sum)} / ${outOf}</td><td class="mono" id="gg_${s.id}">${outOf>0? gr.letter+' ('+gr.gp.toFixed(2)+')' : '-'}</td></tr>`;
+      }).join('');
+      body = `<div class="timetable-wrap"><table class="timetable">${head}${rows}</table></div>
+      <div class="hint">Minimum GPA required for promotion...2.00</div>`;
+    }
+
+    const hasMarks = ss.length>0 && cols.length>0;
+    return `<div class="card course-card" style="border-left-color:${courseColor(c.id)};">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <div style="font-weight:700; font-size:15px;">${c.code} <span style="color:var(--chalk-dim); font-weight:400;">— ${c.name} · ${courseTypeLabel(c)}</span></div>
+        <div style="display:flex; gap:8px;">
+          ${hasMarks? `<button class="btn btn-danger btn-sm" onclick="deleteAllGrades('${c.id}')">${ICONS.deleteAll} Delete all</button>`:''}
+          <button class="btn btn-icon btn-ghost" onclick="openGradingModal('${c.id}')" title="Edit grading criteria">${ICONS.grading}</button>
+        </div>
+      </div>
+      ${body}
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="topbar">
+      <div><h1>Grading</h1><div class="sub">Course-wise student grading tables</div></div>
+      ${state.courses.length>1? `<div class="topbar-actions"><button class="btn btn-ghost" onclick="openCopyGradingModal()">${ICONS.copy} Copy criteria</button></div>`:''}
+    </div>
+    ${chipsHtml}
+    ${courseSections}
+  `;
+}
+function refreshRow(courseId, studentId){
+  const c = courseById(courseId);
+  const cols = gradingColumnsFor(c);
+  const outOf = cols.reduce((s,col)=>s+col.max,0);
+  const rec = getGradeRecord(courseId, studentId, false);
+  const sum = cols.reduce((s,col)=>s+groupValue(rec,col),0);
+  const totalEl = document.getElementById('gt_'+studentId);
+  if(totalEl) totalEl.textContent = `${round2(sum)} / ${outOf}`;
+  const pct = outOf>0? (sum/outOf)*100 : 0;
+  const gr = gradeFromPercent(pct);
+  const gradeEl = document.getElementById('gg_'+studentId);
+  if(gradeEl) gradeEl.textContent = outOf>0? `${gr.letter} (${gr.gp.toFixed(2)})` : '-';
+}
+function setMark(courseId, studentId, key, value, max){
+  let num = value===''? undefined : Math.max(0, Math.min(Number(max), Number(value)));
+  const rec = getGradeRecord(courseId, studentId, true);
+  if(num===undefined) delete rec.scores[key]; else rec.scores[key] = num;
+  save();
+  refreshRow(courseId, studentId);
+}
+function setQuizMark(courseId, studentId, groupKey, idx, value, max){
+  let num = value===''? undefined : Math.max(0, Math.min(Number(max), Number(value)));
+  const rec = getGradeRecord(courseId, studentId, true);
+  const subkey = groupKey+'_q'+idx;
+  if(num===undefined) delete rec.scores[subkey]; else rec.scores[subkey] = num;
+  save();
+  const avgEl = document.getElementById('gavg_'+studentId+'_'+groupKey);
+  if(avgEl){
+    const c = courseById(courseId);
+    const col = gradingColumnsFor(c).find(x=>x.key===groupKey);
+    if(col) avgEl.textContent = groupAvgDisplay(rec, col);
+  }
+  refreshRow(courseId, studentId);
+}
+function deleteAllGrades(courseId){
+  const c = courseById(courseId);
+  if(!confirm(`Delete ALL entered marks for ${c?c.code:'this course'}? Students and grading criteria will be kept.`)) return;
+  state.grades = state.grades.filter(g=>g.courseId!==courseId);
+  save(); toast('All marks cleared for this course'); render();
+}
+function openCopyGradingModal(){
+  const opts = state.courses.map(c=>`<option value="${c.id}">${c.code} — ${c.name}</option>`).join('');
+  openModal(`
+    <h3>Copy Grading Criteria Between Courses</h3>
+    <div class="field"><label>Copy from</label><select id="mCopyGrFrom">${opts}</select></div>
+    <div class="field"><label>Copy to</label><select id="mCopyGrTo">${opts}</select></div>
+    <div class="hint">Copies the grading criteria (which task carries how many marks, including quiz attempts) from the source course to the target course. This replaces the target course's existing criteria. Student marks already entered are not affected.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="copyGradingCriteria()">Copy criteria</button>
+    </div>
+  `);
+}
+function copyGradingCriteria(){
+  const fromId = document.getElementById('mCopyGrFrom').value;
+  const toId = document.getElementById('mCopyGrTo').value;
+  if(fromId===toId){ toast('Please choose two different courses'); return; }
+  const from = courseById(fromId), to = courseById(toId);
+  if(!from || (!(from.gradingCourse||[]).length && !(from.gradingLab||[]).length)){ toast('The source course has no grading criteria to copy'); return; }
+  if(!confirm(`Replace ${to.code}'s grading criteria with ${from.code}'s? Continue?`)) return;
+  to.gradingCourse = (from.gradingCourse||[]).map(g=>({...g}));
+  to.hasLab = !!from.hasLab;
+  to.gradingLab = (from.gradingLab||[]).map(g=>({...g}));
+  save(); closeModal(); toast('Grading criteria copied'); render();
 }
 
 /* ---------------- Reminders ---------------- */
