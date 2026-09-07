@@ -53,15 +53,17 @@ html[data-theme="light"]{
   --shadow:0 1px 2px rgba(20,31,26,0.06);
 }
 *{box-sizing:border-box;}
-html,body{margin:0;padding:0;}
+html,body{margin:0;padding:0;width:100%;height:100%;}
 body{
   background:var(--bg);
   background-image:
     radial-gradient(circle at 15% 8%, rgba(228,185,78,0.05), transparent 40%),
     radial-gradient(circle at 85% 90%, rgba(127,168,201,0.05), transparent 40%);
+  background-attachment:fixed;
   color:var(--chalk);
   font-family:var(--font-body);
   min-height:100vh;
+  min-height:100dvh;
   -webkit-font-smoothing:antialiased;
   transition:background .2s ease, color .2s ease;
 }
@@ -108,14 +110,14 @@ button{ cursor:pointer; border:none; }
 .btn-icon{ padding:7px 9px; border-radius:7px; }
 
 /* App shell */
-.app{ display:flex; min-height:100vh; }
+.app{ display:flex; min-height:100vh; min-height:100dvh; width:100%; }
 .rail{
   width:76px; flex-shrink:0;
   background:var(--surface);
   border-right:1px solid var(--border);
   display:flex; flex-direction:column; align-items:center;
   padding:20px 0; gap:6px;
-  position:sticky; top:0; height:100vh;
+  position:sticky; top:0; height:100vh; height:100dvh;
 }
 .rail .brand{
   width:40px; height:40px; border-radius:10px;
@@ -153,7 +155,7 @@ button{ cursor:pointer; border:none; }
 }
 .theme-toggle svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; }
 
-.main{ flex:1; min-width:0; padding:28px 34px 100px; max-width:1080px; }
+.main{ flex:1; min-width:0; width:100%; padding:28px 34px 100px; }
 .topbar{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:22px; flex-wrap:wrap; gap:10px; }
 .topbar h1{ font-size:26px; margin:0; }
 .topbar .sub{ color:var(--chalk-dim); font-size:13px; }
@@ -354,6 +356,7 @@ html[data-theme="light"] select{ background-image:url("data:image/svg+xml,%3Csvg
 <div id="toast"></div>
 <div id="printArea"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* ---------------- Data layer ---------------- */
 const STORAGE_KEY = 'classboardData_v1';
@@ -575,7 +578,9 @@ const ICONS = {
   copy:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>',
   grading:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
   students:'<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
-  deleteAll:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>'
+  deleteAll:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/><path d="M10 11v6M14 11v6"/></svg>',
+  excel:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8l8 8M16 8l-8 8"/></svg>',
+  pdf:'<svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>'
 };
 
 /* ---------------- Navigation ---------------- */
@@ -1278,7 +1283,9 @@ function renderStudents(){
     return `<div class="card course-card" style="border-left-color:${courseColor(c.id)};">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
         <div style="font-weight:700; font-size:15px;">${c.code} <span style="color:var(--chalk-dim); font-weight:400;">— ${c.name} · ${courseTypeLabel(c)}</span></div>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          ${ss.length? `<button class="btn btn-ghost btn-sm" onclick="exportStudentsExcel('${c.id}')">${ICONS.excel} Excel</button>`:''}
+          ${ss.length? `<button class="btn btn-ghost btn-sm" onclick="exportStudentsPDF('${c.id}')">${ICONS.pdf} PDF</button>`:''}
           ${ss.length? `<button class="btn btn-danger btn-sm" onclick="deleteAllStudents('${c.id}')">${ICONS.deleteAll} Delete all</button>`:''}
           <button class="btn btn-primary btn-sm" onclick="openStudentModal(null,'${c.id}')">${ICONS.plus} Student</button>
         </div>
@@ -1379,6 +1386,97 @@ function copyStudentsBetweenCourses(){
     state.students.push({id:uid(), courseId:toId, name:s.name, studentId:s.studentId, contact:s.contact, semester:s.semester, batch:s.batch, status:s.status});
   });
   save(); closeModal(); toast(`${source.length} student(s) copied`); render();
+}
+
+/* ---------------- Course table export helpers ---------------- */
+function safeFileName(str){
+  return String(str||'export').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'') || 'export';
+}
+function studentsTableData(courseId){
+  const c = courseById(courseId);
+  const ss = state.students.filter(s=>s.courseId===courseId).sort((a,b)=>a.name.localeCompare(b.name));
+  const header = ['Name','Student ID','Contact','Semester','Batch','Status'];
+  const rows = ss.map(s=>[s.name, s.studentId||'', s.contact||'', s.semester||'', s.batch||'', s.status||'']);
+  return {course:c, header, rows};
+}
+function exportStudentsExcel(courseId){
+  if(typeof XLSX==='undefined'){ toast('Excel export library did not load — check your connection'); return; }
+  const {course:c, header, rows} = studentsTableData(courseId);
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  ws['!cols'] = header.map(()=>({wch:16}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Students');
+  XLSX.writeFile(wb, `${safeFileName(c.code)}_students.xlsx`);
+  toast('Excel file downloaded');
+}
+function exportStudentsPDF(courseId){
+  const {course:c, header, rows} = studentsTableData(courseId);
+  let html = `<h1>${c.code} — ${c.name}</h1><h2>Student List</h2>`;
+  html += `<table><tr>${header.map(h=>`<th>${h}</th>`).join('')}</tr>`;
+  rows.forEach(r=>{ html += `<tr>${r.map(v=>`<td>${v===''?'-':v}</td>`).join('')}</tr>`; });
+  html += `</table>`;
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(()=>window.print(), 100);
+}
+function gradingTableData(courseId){
+  const c = courseById(courseId);
+  const cols = gradingColumnsFor(c);
+  const ss = state.students.filter(s=>s.courseId===courseId).sort((a,b)=>a.name.localeCompare(b.name));
+  const outOf = cols.reduce((s,col)=>s+col.max,0);
+  const header = ['Name'];
+  cols.forEach(col=>{
+    if(col.attempts<=1){
+      header.push(`${col.name}${col.lab?' (Lab)':''} (/${col.max})`);
+    } else {
+      for(let i=0;i<col.attempts;i++) header.push(`${col.name} Q${i+1}${col.lab?' (Lab)':''} (/${col.max})`);
+      header.push(`${col.name} Avg (/${col.max})`);
+    }
+  });
+  header.push(`Total (/${outOf})`, 'Grade');
+  const rows = ss.map(s=>{
+    const rec = getGradeRecord(courseId, s.id, false);
+    const row = [s.name];
+    cols.forEach(col=>{
+      if(col.attempts<=1){
+        const v = rec && rec.scores && rec.scores[col.key]!==undefined ? rec.scores[col.key] : '';
+        row.push(v);
+      } else {
+        for(let i=0;i<col.attempts;i++){
+          const v = rec && rec.scores && rec.scores[col.key+'_q'+i]!==undefined ? rec.scores[col.key+'_q'+i] : '';
+          row.push(v);
+        }
+        row.push(groupAvgDisplay(rec, col));
+      }
+    });
+    const sum = cols.reduce((sAcc,col)=>sAcc+groupValue(rec,col),0);
+    const pct = outOf>0? (sum/outOf)*100 : 0;
+    const gr = gradeFromPercent(pct);
+    row.push(round2(sum));
+    row.push(outOf>0? `${gr.letter} (${gr.gp.toFixed(2)})` : '-');
+    return row;
+  });
+  return {course:c, header, rows, hasData: cols.length>0 && ss.length>0};
+}
+function exportGradingExcel(courseId){
+  if(typeof XLSX==='undefined'){ toast('Excel export library did not load — check your connection'); return; }
+  const {course:c, header, rows, hasData} = gradingTableData(courseId);
+  if(!hasData){ toast('Nothing to export yet for this course'); return; }
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  ws['!cols'] = header.map(()=>({wch:14}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Grading');
+  XLSX.writeFile(wb, `${safeFileName(c.code)}_grading.xlsx`);
+  toast('Excel file downloaded');
+}
+function exportGradingPDF(courseId){
+  const {course:c, header, rows, hasData} = gradingTableData(courseId);
+  if(!hasData){ toast('Nothing to export yet for this course'); return; }
+  let html = `<h1>${c.code} — ${c.name}</h1><h2>Grading Table</h2>`;
+  html += `<table><tr>${header.map(h=>`<th>${h}</th>`).join('')}</tr>`;
+  rows.forEach(r=>{ html += `<tr>${r.map(v=>`<td>${v===''?'-':v}</td>`).join('')}</tr>`; });
+  html += `</table>`;
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(()=>window.print(), 100);
 }
 
 /* ---------------- Student Grading ---------------- */
@@ -1500,7 +1598,9 @@ function renderGrading(){
     return `<div class="card course-card" style="border-left-color:${courseColor(c.id)};">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
         <div style="font-weight:700; font-size:15px;">${c.code} <span style="color:var(--chalk-dim); font-weight:400;">— ${c.name} · ${courseTypeLabel(c)}</span></div>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          ${hasMarks? `<button class="btn btn-ghost btn-sm" onclick="exportGradingExcel('${c.id}')">${ICONS.excel} Excel</button>`:''}
+          ${hasMarks? `<button class="btn btn-ghost btn-sm" onclick="exportGradingPDF('${c.id}')">${ICONS.pdf} PDF</button>`:''}
           ${hasMarks? `<button class="btn btn-danger btn-sm" onclick="deleteAllGrades('${c.id}')">${ICONS.deleteAll} Delete all</button>`:''}
           <button class="btn btn-icon btn-ghost" onclick="openGradingModal('${c.id}')" title="Edit grading criteria">${ICONS.grading}</button>
         </div>
