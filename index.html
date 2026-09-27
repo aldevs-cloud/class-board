@@ -378,9 +378,40 @@ html[data-theme="light"] select{ background-image:url("data:image/svg+xml,%3Csvg
 .att-btn.absent.active{ background:var(--danger); color:var(--bg); border-color:transparent; }
 .att-sessions-wrap{ display:flex; flex-wrap:wrap; gap:8px; }
 .att-session-chip{ display:flex; align-items:center; gap:7px; background:var(--surface2); border:1px solid var(--border-strong); border-radius:10px; padding:7px 8px 7px 12px; font-size:12.5px; }
-</style>
+
+/* ---------------- Cloud Auth ---------------- */
+#authScreen{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;}
+#authScreen.hidden{display:none;}
+.auth-card{width:min(430px,100%);background:var(--surface);border:1px solid var(--border-strong);border-radius:18px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.22);}
+.auth-brand{width:58px;height:58px;border-radius:16px;background:var(--brand-grad);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-family:var(--font-display);font-size:20px;margin-bottom:18px;overflow:hidden;}
+.auth-brand img{width:100%;height:100%;object-fit:cover;}
+.auth-title{margin:0 0 6px;font-size:25px;}
+.auth-sub{margin:0 0 22px;color:var(--chalk-dim);font-size:13px;line-height:1.6;}
+.auth-error{display:none;color:var(--danger);font-size:12px;margin:0 0 12px;padding:9px 11px;border:1px solid rgba(239,100,97,.25);border-radius:8px;background:rgba(239,100,97,.08);}
+.auth-error.show{display:block;}
+.auth-actions{display:flex;gap:8px;margin-top:8px;}
+.auth-actions .btn{flex:1;}
+.auth-note{font-size:11px;color:var(--chalk-faint);line-height:1.5;margin-top:15px;}
+.cloud-status{font-size:11px;color:var(--chalk-faint);margin-top:7px;}
+.cloud-logout{position:fixed;right:14px;top:14px;z-index:20;}@media(max-width:700px){.cloud-logout{right:10px;top:10px;}}</style>
 </head>
 <body>
+
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-brand">CB</div>
+    <h1 class="auth-title">Teacher's Portal</h1>
+    <p class="auth-sub">Sign in from any laptop or mobile and keep your ClassBoard data synced in the cloud.</p>
+    <div id="authError" class="auth-error"></div>
+    <div class="field"><label>Username</label><input id="authUsername" autocomplete="username" placeholder="e.g. teacher01"></div>
+    <div class="field"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Your password"></div>
+    <div class="auth-actions">
+      <button class="btn btn-primary" onclick="loginCloud()">🔐 Sign in</button>
+      <button class="btn btn-ghost" onclick="signupCloud()">Create account</button>
+    </div>
+    <div class="auth-note">Your password is handled by Supabase Auth. The app does not store your password in the database. Cloud data is separated per account with database security policies.</div>
+  </div>
+</div>
 
 <div class="app">
   <nav class="rail" id="rail"></nav>
@@ -392,10 +423,12 @@ html[data-theme="light"] select{ background-image:url("data:image/svg+xml,%3Csvg
 <div id="toast"></div>
 <div id="printArea"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* ---------------- Data layer ---------------- */
 const STORAGE_KEY = 'classboardData_v1';
+const LOCAL_CACHE_KEY = 'classboardCloudCache_v1';
 const THEME_KEY = 'classboardTheme';
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const COURSE_COLOR_VARS = ['--c0','--c1','--c2','--c3','--c4','--c5','--c6'];
@@ -403,21 +436,51 @@ const TASK_TYPES = ['Theory','Lab'];
 const COURSE_TYPES = [{v:'theory',label:'Theory'},{v:'lab',label:'Lab'}];
 const STUDENT_STATUS = ['Regular','Diploma'];
 
+/* IMPORTANT: Put your Supabase project URL and publishable/anon key here.
+   Never put a service_role/secret key in this HTML file. */
+const SUPABASE_URL = 'https://ahmqtoztqpfjortswazh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_wW89s9tPrNVym263GPnHqg_o9vIaVID';
+const supabaseConfigured = !SUPABASE_URL.includes('PASTE_YOUR_') && !SUPABASE_KEY.includes('PASTE_YOUR_');
+const supabase = supabaseConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
+}) : null;
+let currentUser = null;
+let cloudSaveTimer = null;
+
 function defaultData(){
   return { profile:{name:'',department:'',university:'',photo:''}, semester:{name:'',start:'',end:''}, courses:[], routine:[], tasks:[], reminders:[], students:[], grades:[], attendance:[] };
 }
-function load(){
+function mergeData(d){ return Object.assign(defaultData(), d || {}); }
+function legacyLocalData(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return defaultData();
-    const d = JSON.parse(raw);
-    return Object.assign(defaultData(), d);
-  }catch(e){ return defaultData(); }
+    if(!raw) return null;
+    return mergeData(JSON.parse(raw));
+  }catch(e){ return null; }
 }
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function setLocalCache(data){
+  try{ localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(data)); }catch(e){}
+}
+function getLocalCache(){
+  try{ const raw=localStorage.getItem(LOCAL_CACHE_KEY); return raw?mergeData(JSON.parse(raw)):null; }catch(e){ return null; }
+}
+function save(){
+  setLocalCache(state);
+  if(!currentUser || !supabase) return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(cloudSave, 350);
+}
+async function cloudSave(){
+  if(!currentUser || !supabase) return;
+  const snapshot = JSON.parse(JSON.stringify(state));
+  const {error} = await supabase.from('app_data').upsert({
+    user_id:currentUser.id, data:snapshot, updated_at:new Date().toISOString()
+  }, {onConflict:'user_id'});
+  if(error) showAuthError('Cloud save failed: '+error.message);
+}
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
-let state = load();
+let state = defaultData();
 let activeTab = 'dashboard';
 let routineView = 'today'; // 'today' | 'full'
 let taskFilterCourse = 'all';
@@ -428,6 +491,93 @@ let attendanceSelectedDate = todayISO();
 let attendanceDraft = {};
 let attendanceDraftKey = '';
 let attendanceWeekOffset = 0;
+
+/* ---------------- Cloud authentication ---------------- */
+function usernameEmail(username){
+  const u=String(username||'').trim().toLowerCase();
+  if(!/^[a-z0-9._-]{3,40}$/.test(u)) throw new Error('Username must be 3-40 characters: letters, numbers, dot, underscore or hyphen.');
+  return u+'@classboard.local';
+}
+function showAuthError(msg){
+  const el=document.getElementById('authError');
+  if(!el) return;
+  el.textContent=msg||''; el.classList.toggle('show',!!msg);
+}
+function setAuthBusy(busy){
+  document.querySelectorAll('#authScreen button').forEach(b=>b.disabled=busy);
+}
+
+function ensureLogoutButton(){
+  let b=document.getElementById('cloudLogout');
+  if(!currentUser){ if(b)b.remove(); return; }
+  if(!b){ b=document.createElement('button'); b.id='cloudLogout'; b.className='btn btn-ghost btn-sm cloud-logout'; b.textContent='↪ Logout'; b.onclick=logoutCloud; document.body.appendChild(b); }
+}
+function showAuthScreen(){ document.getElementById('authScreen').classList.remove('hidden'); }
+function hideAuthScreen(){ document.getElementById('authScreen').classList.add('hidden'); showAuthError(''); }
+async function loginCloud(){
+  if(!supabaseConfigured){ showAuthError('Supabase is not configured yet. Add SUPABASE_URL and SUPABASE_KEY in the HTML first.'); return; }
+  try{
+    setAuthBusy(true); showAuthError('');
+    const email=usernameEmail(document.getElementById('authUsername').value);
+    const password=document.getElementById('authPassword').value;
+    if(!password) throw new Error('Please enter your password.');
+    const {data,error}=await supabase.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    await startCloudSession(data.user);
+  }catch(e){ showAuthError(e.message||'Sign in failed.'); }
+  finally{ setAuthBusy(false); }
+}
+async function signupCloud(){
+  if(!supabaseConfigured){ showAuthError('Supabase is not configured yet. Add SUPABASE_URL and SUPABASE_KEY in the HTML first.'); return; }
+  try{
+    setAuthBusy(true); showAuthError('');
+    const email=usernameEmail(document.getElementById('authUsername').value);
+    const password=document.getElementById('authPassword').value;
+    if(password.length<8) throw new Error('Password must be at least 8 characters.');
+    const {data,error}=await supabase.auth.signUp({email,password});
+    if(error) throw error;
+    if(data.session) await startCloudSession(data.user);
+    else showAuthError('Account created. In Supabase Auth settings, disable email confirmation for this username/password-only setup, then sign in.');
+  }catch(e){ showAuthError(e.message||'Account creation failed.'); }
+  finally{ setAuthBusy(false); }
+}
+async function startCloudSession(user){
+  currentUser=user;
+  let local=legacyLocalData();
+  const {data,error}=await supabase.from('app_data').select('data').eq('user_id',user.id).maybeSingle();
+  if(error) throw error;
+  if(data && data.data){
+    state=mergeData(data.data);
+  }else if(local){
+    state=local;
+    await cloudSave();
+  }else{
+    state=defaultData();
+    await cloudSave();
+  }
+  setLocalCache(state);
+  hideAuthScreen();
+  render();
+}
+async function logoutCloud(){
+  if(supabase) await supabase.auth.signOut();
+  currentUser=null;
+  state=defaultData();
+  showAuthScreen();
+}
+async function initCloudApp(){
+  if(!supabaseConfigured){
+    showAuthScreen();
+    showAuthError('Supabase setup is not complete. Follow the setup instructions to add your project URL and publishable key.');
+    return;
+  }
+  const {data}=await supabase.auth.getSession();
+  if(data.session) await startCloudSession(data.session.user);
+  else showAuthScreen();
+  supabase.auth.onAuthStateChange((event,session)=>{
+    if(event==='SIGNED_OUT'){ currentUser=null; state=defaultData(); showAuthScreen(); }
+  });
+}
 
 /* ---------------- Theme ---------------- */
 function loadTheme(){
@@ -668,6 +818,7 @@ function setTab(id){ activeTab = id; render(); window.scrollTo({top:0}); }
 
 /* ---------------- Render root ---------------- */
 function render(){
+  ensureLogoutButton();
   renderNav();
   const main = document.getElementById('main');
   if(activeTab==='dashboard') main.innerHTML = renderDashboard();
@@ -2179,7 +2330,7 @@ function exportPDF(){
 }
 
 /* ---------------- Init ---------------- */
-render();
+initCloudApp();
 </script>
 </body>
 </html>
