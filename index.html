@@ -494,6 +494,64 @@ div.dcell.empty{ visibility:hidden; pointer-events:none; }
 .clock-num.active{ background:transparent !important; color:var(--bg) !important; }
 .clock-hand-dot{ position:absolute; right:-16px; top:50%; width:32px; height:32px; margin-top:-16px; border-radius:50%; background:var(--yellow); }
 .clock-nudge{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; }
+
+/* ================= UI polish ================= */
+.dash-tiles{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+.dash-tile{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 12px; text-align:left; box-shadow:var(--shadow); color:var(--chalk); }
+.dash-tile-num{ font-family:var(--font-display); font-size:24px; font-weight:600; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dash-tile-lbl{ font-size:11.5px; color:var(--chalk-dim); margin-top:4px; }
+.day-card{ padding:14px 16px; }
+.day-card.is-today{ border-color:var(--yellow); }
+.day-card-head{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.day-card-name{ font-family:var(--font-display); font-weight:600; font-size:15px; }
+.day-count{ margin-left:auto; font-size:12px; color:var(--chalk-dim); }
+.slot-right{ display:flex; align-items:center; gap:10px; }
+.duty-layout{ display:grid; grid-template-columns:1fr 1fr; grid-template-areas:"today sum" "cal sum"; grid-template-rows:auto 1fr; gap:0 16px; align-items:start; }
+.d-today{ grid-area:today; } .d-sum{ grid-area:sum; } .d-cal{ grid-area:cal; }
+.more-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.more-item{ display:flex; flex-direction:column; align-items:center; gap:7px; padding:14px 6px; border-radius:12px; background:var(--surface2); border:1px solid var(--border); color:var(--chalk-dim); font-size:12px; font-weight:600; text-align:center; }
+.more-item svg{ width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.7; }
+.more-item.active{ color:var(--yellow); border-color:var(--yellow); }
+.more-item.sync-btn{ width:auto; height:auto; }
+@media(max-width:760px){
+  .main{ padding:14px 14px calc(84px + env(safe-area-inset-bottom)); }
+  .topbar{ margin-bottom:14px; align-items:center; }
+  .topbar h1{ font-size:21px; }
+  .topbar .btn{ padding:8px 12px; }
+  .topbar-actions{ flex-wrap:wrap; }
+  input, select, textarea{ font-size:16px; }
+  .btn{ min-height:38px; }
+  .btn-sm{ min-height:34px; }
+  .bottom-nav{ overflow:visible; height:calc(60px + env(safe-area-inset-bottom)); justify-content:space-around; }
+  .bottom-nav .tab-btn{ flex:1 1 0; width:auto; min-width:0; height:60px; gap:3px; }
+  .bottom-nav .tab-btn.active::before{ left:50%; top:0; transform:translateX(-50%); width:22px; height:3px; border-radius:0 0 3px 3px; }
+  .bottom-nav .tab-btn .dot{ right:calc(50% - 16px); }
+  .dash-tiles{ gap:8px; margin-bottom:12px; }
+  .dash-tile{ padding:11px 10px; }
+  .dash-tile-num{ font-size:19px; }
+  .dash-tile-lbl{ font-size:10.5px; }
+  .dash-grid > div:nth-child(2){ order:-1; }
+  .dash-grid{ display:flex; flex-direction:column; gap:0; }
+  .card{ border-radius:13px; margin-bottom:12px; }
+  .chips{ flex-wrap:nowrap; overflow-x:auto; margin:0 -14px 14px; padding:2px 14px 4px; scrollbar-width:none; }
+  .chips::-webkit-scrollbar{ display:none; }
+  .chip{ flex-shrink:0; white-space:nowrap; padding:7px 13px; }
+  .task-row{ gap:10px; flex-wrap:wrap; }
+  .task-row > div[style*="flex:1"]{ min-width:0; flex:1 1 150px; }
+  .task-row .badge{ order:3; }
+  .class-slot{ flex-wrap:wrap; gap:8px; }
+  .slot-right{ width:100%; justify-content:space-between; }
+  .routine-summary{ gap:16px; justify-content:space-between; }
+  .duty-layout{ display:flex; flex-direction:column; }
+  .duty-stat-num{ font-size:18px; }
+  .dcell{ min-height:40px; }
+  .modal-overlay, .overlay{ align-items:flex-end; padding:0; }
+  .overlay .modal{ border-radius:18px 18px 0 0; max-height:90vh; padding-bottom:calc(20px + env(safe-area-inset-bottom)); }
+  #clockOverlay{ align-items:center; padding:20px; }
+  #clockOverlay .modal{ border-radius:18px; padding-bottom:20px; }
+  .modal-actions{ flex-wrap:wrap; }
+  .modal-actions .btn{ flex:1 1 auto; }
+}
 </style>
 </head>
 <body class="mode-boot">
@@ -835,8 +893,18 @@ function renderNav(){
   const rail = document.getElementById('rail');
   rail.innerHTML = `<div class="brand" title="Teacher profile">${brandContent()}</div>` + html + `
     <div class="rail-bottom">${syncBtn}<button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">${isDark? ICONS.sun : ICONS.moon}</button></div>`;
-  document.getElementById('bottomNav').innerHTML = html + syncBtn + `
-    <button class="tab-btn" onclick="toggleTheme()">${isDark? ICONS.sun : ICONS.moon}<span>Theme</span></button>`;
+  const PRIMARY = ['dashboard','routine','tasks','duty'];
+  const prim = TABS.filter(t=>PRIMARY.includes(t.id)).map(t=>`
+    <button class="tab-btn ${activeTab===t.id?'active':''}" onclick="setTab('${t.id}')">${ICONS[t.id]}<span>${t.label==='Dashboard'?'Home':t.label}</span>${t.id==='dashboard' && wc>0 ? '<span class="dot show"></span>':''}</button>`).join('');
+  document.getElementById('bottomNav').innerHTML = prim + `<button class="tab-btn ${PRIMARY.includes(activeTab)?'':'active'}" onclick="openMore()">${ICONS.more}<span>More</span></button>`;
+}
+const MORE_IDS = ['setup','students','attendance','grading','reminders','data'];
+function openMore(){
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  const items = TABS.filter(t=>MORE_IDS.includes(t.id)).map(t=>`<button class="more-item ${activeTab===t.id?'active':''}" onclick="closeModal(); setTab('${t.id}')">${ICONS[t.id]}<span>${t.label}</span></button>`).join('');
+  openModal(`<h3>More</h3><div class="more-grid">${items}
+    <button class="more-item sync-btn s-${cloud.status}" onclick="closeModal(); cloudSyncNow()">${ICONS.cloud}<span>${SYNC_TEXT[cloud.status]}</span></button>
+    <button class="more-item" onclick="toggleTheme(); closeModal()">${isDark? ICONS.sun : ICONS.moon}<span>${isDark?'Light':'Dark'} mode</span></button></div>`);
 }
 function setTab(id){ activeTab = id; render(); window.scrollTo({top:0}); }
 
@@ -858,6 +926,15 @@ function render(){
 }
 
 /* ---------------- Dashboard ---------------- */
+function dashStatsHtml(todays, warnings){
+  const e = dEntries()[dTodayKey()];
+  let dt = 'Not logged', dc = 'var(--chalk-dim)';
+  if(e && e.type==='work' && e.exit){ const du = dDur(e.entry,e.exit); dt = du? du.label : 'Done'; dc = 'var(--green)'; }
+  else if(e && e.type==='work'){ dt = 'On duty'; dc = 'var(--yellow)'; }
+  else if(e && e.type==='off'){ dt = dOffType(e)==='holiday' ? 'Closed' : 'On leave'; dc = 'var(--amber)'; }
+  const tile = (n,l,c,tab)=>`<button class="dash-tile" onclick="setTab('${tab}')"><div class="dash-tile-num" style="color:${c};">${n}</div><div class="dash-tile-lbl">${l}</div></button>`;
+  return `<div class="dash-tiles">${tile(todays.length,'Classes today','var(--yellow)','routine')}${tile(warnings.length,'Due soon', warnings.length?'var(--danger)':'var(--green)','tasks')}${tile(dt,'Duty today',dc,'duty')}</div>`;
+}
 function renderDashboard(){
   const sem = state.semester;
   let semProgress = '';
@@ -933,7 +1010,8 @@ function renderDashboard(){
     <div class="topbar">
       <div><h1>${state.profile.name? 'Hi, '+state.profile.name.split(' ')[0] : 'Dashboard'}</h1><div class="sub">${new Date().toLocaleDateString('en-US',{weekday:'long', day:'numeric', month:'long'})}${state.profile.department||state.profile.university? ' · '+[state.profile.department,state.profile.university].filter(Boolean).join(', ') : ''}</div></div>
     </div>
-    <div class="grid2">
+    ${dashStatsHtml(todays,warnings)}
+    <div class="grid2 dash-grid">
       <div>
         ${semProgress}
         <div class="card">
@@ -1236,7 +1314,7 @@ function slotHtml(r){
       <div class="ct">${c? c.code : '—'}</div>
       <div class="cm">${c? c.name:''}${r.room? ' · Room '+r.room:''}</div>
     </div>
-    <div style="display:flex; align-items:center; gap:10px;">
+    <div class="slot-right">
       <div class="time">${formatTime12(r.start)} – ${formatTime12(r.end)}</div>
       <button class="btn btn-icon btn-ghost" onclick="openSlotModal('${r.id}')">${ICONS.edit}</button>
       <button class="btn btn-icon btn-danger" onclick="deleteSlot('${r.id}')">${ICONS.trash}</button>
@@ -1250,55 +1328,10 @@ function renderFullRoutineTable(){
   const activeDays = new Set(state.routine.map(r=>r.day)).size;
   const todayIdx = todayDayIndex();
 
-  let rowsHtml = '';
-  DAYS.forEach((d,i)=>{
-    const items = state.routine.filter(r=>r.day===i).sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
-    if(items.length===0) return;
-    items.forEach((r,idx)=>{
-      const c = courseById(r.courseId);
-      rowsHtml += `<tr class="${idx===0?'day-first':''} ${i===todayIdx?'is-today':''}">
-        <td class="tt-day">${idx===0? d : ''}</td>
-        <td>
-          <div class="tt-course">
-            <span class="tt-dot" style="background:${courseColor(r.courseId)};"></span>
-            <div>
-              <div class="tt-code">${c? c.code : '—'}</div>
-              <div class="tt-name">${c? c.name : ''}</div>
-            </div>
-          </div>
-        </td>
-        <td class="tt-time">${formatTime12(r.start)} – ${formatTime12(r.end)}</td>
-        <td>${r.room||'—'}</td>
-        <td style="text-align:right; white-space:nowrap;">
-          <button class="btn btn-icon btn-ghost" onclick="openSlotModal('${r.id}')">${ICONS.edit}</button>
-          <button class="btn btn-icon btn-danger" onclick="deleteSlot('${r.id}')">${ICONS.trash}</button>
-        </td>
-      </tr>`;
-    });
-  });
-
-  if(!rowsHtml){
-    return `<div class="card"><div class="empty">No classes added yet.</div></div>`;
-  }
-
-  return `
-    <div class="card">
-      <div class="routine-summary">
-        <div><div class="stat-big">${totalClasses}</div><div class="stat-label">classes / week</div></div>
-        <div><div class="stat-big">${totalHours}</div><div class="stat-label">contact hours / week</div></div>
-        <div><div class="stat-big">${activeDays}</div><div class="stat-label">active days</div></div>
-      </div>
-    </div>
-    <div class="card">
-      <p class="card-title">Weekly timetable</p>
-      <div class="timetable-wrap">
-        <table class="timetable">
-          <thead><tr><th>Day</th><th>Course</th><th>Time</th><th>Room</th><th></th></tr></thead>
-          <tbody>${rowsHtml}</tbody>
-        </table>
-      </div>
-    </div>
-  `;
+  const dayCards = DAYS.map((d,i)=>({d,i,items:state.routine.filter(r=>r.day===i).sort((a,b)=>toMinutes(a.start)-toMinutes(b.start))})).filter(x=>x.items.length);
+  const rowsHtml = dayCards.map(x=>`<div class="card day-card ${x.i===todayIdx?'is-today':''}"><div class="day-card-head"><span class="day-card-name">${x.d}</span>${x.i===todayIdx?'<span class="badge ok">Today</span>':''}<span class="day-count">${x.items.length} class${x.items.length>1?'es':''}</span></div>${x.items.map(slotHtml).join('')}</div>`).join('');
+  if(!rowsHtml) return `<div class="card"><div class="empty">No classes added yet.</div></div>`;
+  return `<div class="card"><div class="routine-summary"><div><div class="stat-big">${totalClasses}</div><div class="stat-label">classes / week</div></div><div><div class="stat-big">${totalHours}</div><div class="stat-label">contact hours / week</div></div><div><div class="stat-big">${activeDays}</div><div class="stat-label">active days</div></div></div></div>${rowsHtml}`;
 }
 function openSlotModal(id){
   const r = id? state.routine.find(x=>x.id===id) : {courseId:state.courses[0]?.id, day:todayDayIndex(), start:'', end:'', room:''};
@@ -2298,6 +2331,7 @@ Object.assign(ICONS, {
   duty:'<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M2 13h20"/></svg>',
   cloud:'<svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>',
   user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>',
+  more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
   xmark:'<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>'
 });
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -3086,27 +3120,23 @@ function renderDuty(){
       <div><h1>Duty Log</h1><div class="sub">Office attendance and duty hours</div></div>
       <div class="topbar-actions"><button class="btn btn-ghost" onclick="dutyExportPDF()">${ICONS.pdf} ${DUTY_MONTHS[m]} PDF</button><button class="btn btn-ghost" onclick="dutyOpenSettings()">${ICONS.setup.replace('<svg','<svg width="15" height="15"')} Duty settings</button></div>
     </div>
-    <div class="grid2">
-      <div>
-        <div class="card">${dutyTodayHtml()}</div>
-        <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px;">
-            <p class="card-title" style="margin:0;">Calendar</p>
-            ${isCurrent?'':`<button class="btn btn-ghost btn-sm" onclick="dutyGoToday()">Back to this month</button>`}
-          </div>
-          ${dutyCalendarHtml()}
+    <div class="duty-layout">
+      <div class="card d-today">${dutyTodayHtml()}</div>
+      <div class="card d-sum">
+        <p class="card-title">${DUTY_MONTHS[m]} summary</p>
+        <div class="duty-stats">
+          ${stat(s.present,'Present','var(--green)')}${stat(s.missed,'Absent','var(--danger)')}${stat(s.leave,'Personal leave','var(--amber)')}${stat(s.holiday,'Office closed','var(--purple)')}
+          ${stat(dHM(s.worked),'Hours worked','var(--yellow)')}${stat(dHM(s.expMin),'Expected hours','var(--chalk-dim)')}${stat(s.late,'Late','var(--amber)')}${stat(s.early,'Left early','var(--amber)')}
         </div>
+        <div class="duty-diff"><span>Expected duty days: <b>${s.expDays}</b></span><span>Actual \u2212 expected: <b style="color:${diff<0?'var(--danger)':'var(--green)'};">${diff<0?'\u2212':'+'}${dHM(diff)}</b></span></div>
+        <div class="hint">Office-closed days are left out of expected hours. Personal-leave days still count as expected duty days.</div>
       </div>
-      <div>
-        <div class="card">
-          <p class="card-title">${DUTY_MONTHS[m]} summary</p>
-          <div class="duty-stats">
-            ${stat(s.present,'Present','var(--green)')}${stat(s.missed,'Absent','var(--danger)')}${stat(s.leave,'Personal leave','var(--amber)')}${stat(s.holiday,'Office closed','var(--purple)')}
-            ${stat(dHM(s.worked),'Hours worked','var(--yellow)')}${stat(dHM(s.expMin),'Expected hours','var(--chalk-dim)')}${stat(s.late,'Late','var(--amber)')}${stat(s.early,'Left early','var(--amber)')}
-          </div>
-          <div class="duty-diff"><span>Expected duty days: <b>${s.expDays}</b></span><span>Actual \u2212 expected: <b style="color:${diff<0?'var(--danger)':'var(--green)'};">${diff<0?'\u2212':'+'}${dHM(diff)}</b></span></div>
-          <div class="hint">Office-closed days are left out of expected hours. Personal-leave days still count as expected duty days.</div>
+      <div class="card d-cal">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px;">
+          <p class="card-title" style="margin:0;">Calendar</p>
+          ${isCurrent?'':`<button class="btn btn-ghost btn-sm" onclick="dutyGoToday()">This month</button>`}
         </div>
+        ${dutyCalendarHtml()}
       </div>
     </div>`;
 }
