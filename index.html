@@ -473,6 +473,20 @@ div.dcell.empty{ visibility:hidden; pointer-events:none; }
 .duty-exit-row .time-picker-field{ flex:1; min-width:0; }
 .duty-actions{ display:flex; gap:8px; flex-wrap:wrap; }
 @media(max-width:560px){ .dcell{ min-height:42px; border-radius:8px; } .duty-wd, .duty-days{ gap:4px; } .dsub{ font-size:8.5px; } }
+
+/* Account tab */
+.acct-wrap{ max-width:760px; }
+.acct-hero{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.acct-hero-info{ flex:1; min-width:200px; }
+.sync-line{ font-size:12px; color:var(--chalk-dim); margin-top:6px; line-height:1.5; }
+.set-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:13px 0; border-bottom:1px solid var(--border); }
+.set-row:last-child{ border-bottom:none; padding-bottom:2px; }
+.set-info{ flex:1; min-width:0; }
+.set-title{ font-size:14.5px; font-weight:600; }
+.set-desc{ font-size:12.5px; color:var(--chalk-dim); margin-top:3px; line-height:1.5; }
+.set-actions{ flex-shrink:0; display:flex; gap:8px; }
+.danger-card{ border-color:rgba(239,100,97,.30); }
+@media(max-width:560px){ .set-row{ flex-direction:column; align-items:stretch; gap:10px; } .set-actions .btn{ width:100%; text-align:center; } .acct-hero .btn{ width:100%; } }
 </style>
 </head>
 <body class="mode-boot">
@@ -2711,6 +2725,43 @@ function doSaveConfig(url, key){
 }
 async function authSignOutOnly(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} authView = 'signin'; renderAuth(); }
 
+/* ---- delete account (needs the delete_my_account() function from supabase_setup.sql) ---- */
+function openDeleteAccount(){
+  const email = (cloud.user && cloud.user.email) || '';
+  openModal(`
+    <h3 style="color:var(--danger);">Delete account</h3>
+    <p style="font-size:13.5px; line-height:1.55; color:var(--chalk-dim); margin:0 0 12px;">
+      This permanently deletes <b style="color:var(--chalk); word-break:break-all;">${esc(email)}</b> and everything saved in it \u2014 courses, students, grades, attendance, Duty Log and settings. It can\u2019t be undone. Consider downloading a backup first.
+    </p>
+    <div class="field"><label>Type <b>DELETE</b> to confirm</label><input id="delConfirm" autocomplete="off" placeholder="DELETE"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="exportJSON()">Download backup</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" id="delBtn" onclick="confirmDeleteAccount()">Delete forever</button>
+    </div>`);
+}
+async function confirmDeleteAccount(){
+  const v = (document.getElementById('delConfirm').value || '').trim();
+  if(v !== 'DELETE'){ toast('Type DELETE to confirm'); return; }
+  const btn = document.getElementById('delBtn'); btn.disabled = true; btn.textContent = 'Deleting\u2026';
+  try{
+    clearTimeout(cloud.timer);
+    const {error} = await sb.rpc('delete_my_account');
+    if(error) throw error;
+    const uid = cloud.user && cloud.user.id;
+    cloud.dirty = false;                                   // nothing left to upload
+    if(uid){ localStorage.removeItem(cacheKey(uid)); localStorage.removeItem('classboardMigratedTo'); }
+    try{ await sb.auth.signOut({scope:'local'}); }catch(e){}
+    authFlash = {type:'success', text:'Your account and all its data were deleted.'};
+    handleSignedOut();
+  }catch(e){
+    btn.disabled = false; btn.textContent = 'Delete forever';
+    const m = String((e && e.message) || '');
+    if(e && (e.code==='PGRST202' || /could not find the function|delete_my_account/i.test(m))) toast('Run the updated supabase_setup.sql first, then try again');
+    else toast(friendlyDbError(e));
+  }
+}
+
 /* ---- change password (signed in) ---- */
 function openChangePassword(){
   openModal(`
@@ -2733,54 +2784,49 @@ async function saveNewPassword(){
 /* ======================================================================
    ACCOUNT & BACKUP TAB
    ====================================================================== */
+function setRow(title, desc, actions){
+  return `<div class="set-row"><div class="set-info"><div class="set-title">${title}</div><div class="set-desc">${desc}</div></div><div class="set-actions">${actions}</div></div>`;
+}
 function renderData(){
-  const email = cloud.user ? (cloud.user.email || '') : '';
+  const u = cloud.user || {};
+  const email = u.email || '';
+  const since = u.created_at ? new Date(u.created_at).toLocaleDateString('en-US',{month:'short', year:'numeric'}) : '';
+  const counts = [
+    state.courses.length+' course'+(state.courses.length===1?'':'s'),
+    state.students.length+' student'+(state.students.length===1?'':'s'),
+    Object.keys(state.duty.entries).length+' duty entr'+(Object.keys(state.duty.entries).length===1?'y':'ies')
+  ].join(' \u00b7 ');
   return `
-    <div class="topbar"><div><h1>Account & Backup</h1><div class="sub">Cloud sync across your devices, plus manual backups</div></div></div>
-    <div class="grid2">
-      <div class="card">
-        <p class="card-title">Account</p>
-        <div class="profile-header" style="margin-bottom:14px;">
-          <div class="avatar-lg" style="width:48px; height:48px; font-size:18px; border-radius:12px;">${esc(email.slice(0,1).toUpperCase() || '?')}</div>
-          <div style="min-width:0;">
-            <div class="profile-name" style="font-size:15px; word-break:break-all;">${esc(email)}</div>
-            <div class="profile-sub" id="syncDetail">${syncDetailHtml()}</div>
-          </div>
+    <div class="topbar"><div><h1>Account</h1><div class="sub">Your login, cloud sync, backups and data</div></div></div>
+    <div class="acct-wrap">
+      <div class="card acct-hero">
+        <div class="avatar-lg" style="width:56px; height:56px; font-size:21px;">${esc(email.slice(0,1).toUpperCase() || '?')}</div>
+        <div class="acct-hero-info">
+          <div class="profile-name" style="word-break:break-all;">${esc(email)}</div>
+          <div class="profile-sub">${since ? 'Member since '+since+' \u00b7 ' : ''}${counts}</div>
+          <div class="sync-line" id="syncDetail">${syncDetailHtml()}</div>
         </div>
-        <div class="duty-actions">
-          <button class="btn btn-primary btn-sm" onclick="cloudSyncNow()">Sync now</button>
-          <button class="btn btn-ghost btn-sm" onclick="openChangePassword()">Change password</button>
-          <button class="btn btn-danger btn-sm" onclick="signOut()">Sign out</button>
-        </div>
+        <button class="btn btn-primary btn-sm" onclick="cloudSyncNow()">Sync now</button>
       </div>
+
       <div class="card">
-        <p class="card-title">Cloud sync</p>
-        <div class="hint" style="font-size:13px; color:var(--chalk-dim); margin-top:0;">
-          Everything \u2014 courses, routine, tasks, students, grading, attendance, reminders and the Duty Log \u2014 is saved to your account automatically a moment after each change. Sign in with the same email on any phone or computer to see the same data.
-        </div>
-        <div class="hint">If you edit on two devices at the same time, ClassBoard asks which version to keep. A copy is cached in this browser for faster loading and removed when you sign out.</div>
+        <p class="card-title">Security</p>
+        ${setRow('Password', 'Choose a new password for this account.', '<button class="btn btn-ghost btn-sm" onclick="openChangePassword()">Change password</button>')}
+        ${setRow('Sign out', 'Sign out on this device. Your data stays safe in your account.', '<button class="btn btn-ghost btn-sm" onclick="signOut()">Sign out</button>')}
       </div>
-    </div>
-    <div class="grid2">
+
       <div class="card">
-        <p class="card-title">JSON backup</p>
-        <button class="btn btn-primary" style="width:100%; margin-bottom:10px;" onclick="exportJSON()">\ud83d\udce6 Download backup (JSON)</button>
-        <label class="btn btn-ghost" style="width:100%; display:block; text-align:center; box-sizing:border-box;">
-          \ud83d\udce5 Import backup (JSON)
-          <input type="file" accept="application/json,.json" style="display:none;" onchange="importJSON(event)">
-        </label>
-        <div class="hint">The backup contains all your data, including the Duty Log. Importing replaces everything in your account with the file\u2019s contents (a backup from before the Duty Log existed keeps your current duty entries). Backup files from the old standalone Duty Log app are accepted too \u2014 you\u2019ll be asked whether to merge or replace.</div>
+        <p class="card-title">Backup & export</p>
+        ${setRow('Download backup', 'One JSON file with everything: courses, routine, tasks, students, grading, attendance, reminders and the Duty Log.', '<button class="btn btn-primary btn-sm" onclick="exportJSON()">Download JSON</button>')}
+        ${setRow('Import backup', 'Replaces everything in your account with the file\u2019s contents. Old standalone Duty Log files are accepted too.', '<label class="btn btn-ghost btn-sm" style="margin:0;">Import JSON<input type="file" accept="application/json,.json" style="display:none;" onchange="importJSON(event)"></label>')}
+        ${setRow('Printable summary', 'Semester info, routine, task progress and reminders as a PDF (use \u201cSave as PDF\u201d in the print dialog).', '<button class="btn btn-ghost btn-sm" onclick="exportPDF()">Print / PDF</button>')}
       </div>
-      <div class="card">
-        <p class="card-title">PDF export</p>
-        <button class="btn btn-primary" style="width:100%;" onclick="exportPDF()">\ud83d\udda8\ufe0f Print / Save as PDF</button>
-        <div class="hint">Choose "Save as PDF" in the print dialog. Includes semester info, routine, task progress, and reminders.</div>
+
+      <div class="card danger-card">
+        <p class="card-title" style="color:var(--danger);">Danger zone</p>
+        ${setRow('Delete all data', 'Erases every course, task, student, duty entry and setting but keeps your login. Download a backup first.', '<button class="btn btn-danger btn-sm" onclick="clearAllData()">Delete all data</button>')}
+        ${setRow('Delete account', 'Permanently deletes your login and all your data from the cloud. This cannot be undone.', '<button class="btn btn-danger btn-sm" onclick="openDeleteAccount()">Delete account</button>')}
       </div>
-    </div>
-    <div class="card">
-      <p class="card-title" style="color:var(--danger);">Danger zone</p>
-      <button class="btn btn-danger" onclick="clearAllData()">Delete all data</button>
-      <div class="hint">Erases everything in your account (and on this device). Download a backup first if you might need it.</div>
     </div>
   `;
 }
@@ -3004,7 +3050,7 @@ function renderDuty(){
   return `
     <div class="topbar">
       <div><h1>Duty Log</h1><div class="sub">Office attendance and duty hours</div></div>
-      <div class="topbar-actions"><button class="btn btn-ghost" onclick="dutyOpenSettings()">${ICONS.setup.replace('<svg','<svg width="15" height="15"')} Duty settings</button></div>
+      <div class="topbar-actions"><button class="btn btn-ghost" onclick="dutyExportPDF()">${ICONS.pdf} ${DUTY_MONTHS[m]} PDF</button><button class="btn btn-ghost" onclick="dutyOpenSettings()">${ICONS.setup.replace('<svg','<svg width="15" height="15"')} Duty settings</button></div>
     </div>
     <div class="grid2">
       <div>
@@ -3026,15 +3072,6 @@ function renderDuty(){
           </div>
           <div class="duty-diff"><span>Expected duty days: <b>${s.expDays}</b></span><span>Actual \u2212 expected: <b style="color:${diff<0?'var(--danger)':'var(--green)'};">${diff<0?'\u2212':'+'}${dHM(diff)}</b></span></div>
           <div class="hint">Office-closed days are left out of expected hours. Personal-leave days still count as expected duty days.</div>
-        </div>
-        <div class="card">
-          <p class="card-title">Export & backup</p>
-          <div class="duty-actions">
-            <button class="btn btn-primary btn-sm" onclick="dutyExportPDF()">${ICONS.pdf} ${DUTY_MONTHS[m]} PDF</button>
-            <button class="btn btn-ghost btn-sm" onclick="dutyExportJSON()">Duty backup (JSON)</button>
-            <label class="btn btn-ghost btn-sm">Import duty backup<input type="file" accept="application/json,.json" style="display:none;" onchange="dutyImportFile(event)"></label>
-          </div>
-          <div class="hint">Your Duty Log is also part of the full backup and the cloud sync \u2014 these are for working with the Duty Log on its own, including files from the old standalone app.</div>
         </div>
       </div>
     </div>`;
@@ -3202,21 +3239,7 @@ function dutyExportPDF(){
   setTimeout(()=>window.print(), 100);
 }
 
-/* ---- Duty-only JSON backup / import (compatible with the old standalone app) ---- */
-function dutyExportJSON(){
-  const payload = {data:state.duty.entries, settings:state.duty.settings, exportedAt:new Date().toISOString()};
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob), a = document.createElement('a');
-  a.href = url; a.download = 'dutylog-backup-'+dTodayKey()+'.json';
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  toast('Duty backup downloaded');
-}
-function dutyImportFile(evt){
-  const f = evt.target.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = e=>{ try{ dutyImportParsed(JSON.parse(e.target.result)); }catch(err){ toast('This file is not valid'); } };
-  r.readAsText(f); evt.target.value = '';
-}
+/* ---- Old standalone Duty Log backup files are recognised by the main Import button ---- */
 function dutyImportParsed(parsed){
   if(!parsed || typeof parsed!=='object'){ toast('This file is not valid'); return; }
   const raw = parsed.data || (parsed.duty && parsed.duty.entries) || parsed;
