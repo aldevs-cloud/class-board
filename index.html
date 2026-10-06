@@ -378,9 +378,104 @@ html[data-theme="light"] select{ background-image:url("data:image/svg+xml,%3Csvg
 .att-btn.absent.active{ background:var(--danger); color:var(--bg); border-color:transparent; }
 .att-sessions-wrap{ display:flex; flex-wrap:wrap; gap:8px; }
 .att-session-chip{ display:flex; align-items:center; gap:7px; background:var(--surface2); border:1px solid var(--border-strong); border-radius:10px; padding:7px 8px 7px 12px; font-size:12.5px; }
+
+/* ================= Additions: icons, rail, boot/auth, sync, Duty Log ================= */
+.btn svg{ stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; vertical-align:-2px; }
+.chips .chip{ cursor:pointer; user-select:none; }
+.rail{ overflow-y:auto; scrollbar-width:none; }
+.rail::-webkit-scrollbar{ display:none; }
+.rail-bottom{ margin-top:auto; display:flex; flex-direction:column; align-items:center; gap:6px; padding-top:10px; }
+.rail-bottom .theme-toggle{ margin-top:0; }
+.sync-btn.s-synced svg{ stroke:var(--green); }
+.sync-btn.s-saving svg{ stroke:var(--yellow); animation:cbPulse 1s ease-in-out infinite; }
+.sync-btn.s-offline svg, .sync-btn.s-conflict svg{ stroke:var(--amber); }
+.sync-btn.s-error svg{ stroke:var(--danger); }
+@keyframes cbPulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+/* boot + auth */
+.auth-screen, .boot-splash{ display:none; }
+body.mode-boot .app, body.mode-boot .bottom-nav, body.mode-auth .app, body.mode-auth .bottom-nav{ display:none !important; }
+body.mode-boot .boot-splash{ display:flex; }
+body.mode-auth .auth-screen{ display:flex; }
+.boot-splash{ position:fixed; inset:0; align-items:center; justify-content:center; background:var(--bg); z-index:150; }
+.spinner{ width:34px; height:34px; border-radius:50%; border:3px solid var(--border-strong); border-top-color:var(--yellow); animation:cbSpin .8s linear infinite; }
+@keyframes cbSpin{ to{ transform:rotate(360deg); } }
+.auth-screen{
+  position:fixed; inset:0; z-index:200; align-items:center; justify-content:center; padding:20px; overflow-y:auto;
+  background:var(--bg);
+  background-image:radial-gradient(circle at 15% 8%, rgba(76,141,255,0.10), transparent 40%), radial-gradient(circle at 85% 90%, rgba(34,184,166,0.08), transparent 40%);
+}
+.auth-card{ width:100%; max-width:410px; margin:auto; background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:30px 28px 24px; box-shadow:0 12px 40px rgba(0,0,0,0.25); }
+.auth-logo{ width:62px; height:62px; border-radius:16px; margin:0 auto 14px; border:1px solid var(--border-strong); background:var(--logo-uri) center/cover no-repeat, var(--brand-grad); box-shadow:0 0 0 4px rgba(76,141,255,0.10); }
+.auth-title{ text-align:center; font-size:24px; margin:0; }
+.auth-sub{ text-align:center; color:var(--chalk-dim); font-size:13px; margin:4px 0 20px; }
+.auth-tabs{ display:flex; gap:6px; background:var(--surface2); padding:4px; border-radius:11px; margin-bottom:16px; }
+.auth-tab{ flex:1; padding:8px 10px; border-radius:8px; background:transparent; color:var(--chalk-dim); font-size:13px; font-weight:600; }
+.auth-tab.active{ background:var(--surface3); color:var(--chalk); box-shadow:var(--shadow); }
+.auth-msg{ display:none; font-size:13px; line-height:1.5; padding:10px 12px; border-radius:9px; margin-bottom:14px; border:1px solid transparent; }
+.auth-msg.error{ display:block; background:rgba(239,100,97,.12); color:var(--danger); border-color:rgba(239,100,97,.30); }
+.auth-msg.success{ display:block; background:rgba(63,206,126,.12); color:var(--green); border-color:rgba(63,206,126,.30); }
+.auth-msg.info{ display:block; background:rgba(76,141,255,.12); color:var(--yellow); border-color:rgba(76,141,255,.30); }
+.auth-submit{ width:100%; padding:11px 16px; margin-top:4px; }
+.auth-links{ display:flex; justify-content:space-between; gap:10px; margin-top:14px; }
+.auth-link{ background:none; color:var(--yellow); font-size:13px; font-weight:600; padding:0; }
+.auth-link:hover{ text-decoration:underline; }
+.pw-wrap{ position:relative; }
+.pw-wrap input{ padding-right:58px; }
+.pw-toggle{ position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; color:var(--chalk-dim); font-size:12px; font-weight:600; padding:6px 8px; }
+
+/* Duty Log */
+.duty-stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+@media(max-width:560px){ .duty-stats{ grid-template-columns:repeat(2,1fr); } }
+.duty-stat{ background:var(--surface2); border:1px solid var(--border); border-radius:11px; padding:12px 8px; text-align:center; }
+.duty-stat-num{ font-family:var(--font-display); font-size:21px; font-weight:600; line-height:1.15; white-space:nowrap; }
+.duty-stat-lbl{ font-size:11px; color:var(--chalk-dim); margin-top:4px; }
+.duty-diff{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:12px; font-size:12.5px; color:var(--chalk-dim); }
+.duty-diff b{ color:var(--chalk); font-family:var(--font-mono); font-weight:600; }
+.duty-today-big{ font-family:var(--font-mono); font-size:26px; font-weight:600; color:var(--green); }
+.duty-status-line{ font-size:17px; font-weight:600; }
+.duty-note{ font-size:12.5px; color:var(--amber); margin-top:6px; font-weight:600; }
+.duty-timer{ margin-top:12px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; text-align:center; }
+.duty-timer-lbl{ font-size:11.5px; color:var(--chalk-dim); font-weight:600; margin-bottom:4px; }
+.duty-timer-val{ font-family:var(--font-mono); font-size:28px; font-weight:700; letter-spacing:.02em; color:var(--yellow); }
+.duty-cal-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:14px; }
+.duty-cal-head h2{ font-size:17px; margin:0; text-align:center; flex:1; }
+.duty-wd, .duty-days{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+.duty-wd{ margin-bottom:6px; }
+.duty-wd span{ text-align:center; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--chalk-dim); }
+.duty-wd span.wk{ color:var(--chalk-faint); }
+.dcell{
+  position:relative; aspect-ratio:1/1; min-height:46px; border-radius:10px; padding:2px;
+  border:1px solid var(--border); background:var(--surface2); color:var(--chalk);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  font-family:inherit; transition:transform .1s ease, border-color .15s ease;
+}
+.dcell:hover{ transform:translateY(-1px); border-color:var(--border-strong); }
+div.dcell.empty{ visibility:hidden; pointer-events:none; }
+.dnum{ font-size:14px; font-weight:600; line-height:1; }
+.dsub{ font-family:var(--font-mono); font-size:9.5px; color:var(--chalk-dim); white-space:nowrap; line-height:1; }
+.dcell.worked{ background:rgba(63,206,126,.14); border-color:rgba(63,206,126,.42); }
+.dcell.worked .dsub{ color:var(--green); }
+.dcell.progress{ background:rgba(76,141,255,.14); border-color:rgba(76,141,255,.45); }
+.dcell.progress .dsub{ color:var(--yellow); }
+.dcell.missed{ background:rgba(239,100,97,.13); border-color:rgba(239,100,97,.42); }
+.dcell.missed .dnum{ color:var(--danger); }
+.dcell.type-leave{ background:rgba(240,169,78,.15); border-color:rgba(240,169,78,.46); }
+.dcell.type-holiday{ background:rgba(139,124,246,.14); border-color:rgba(139,124,246,.42); }
+.dcell.weekend{ background:transparent; border-style:dashed; color:var(--chalk-faint); }
+.dcell.future{ background:transparent; color:var(--chalk-dim); }
+.dcell.is-today{ outline:2px solid var(--yellow); outline-offset:1px; }
+.dcell .flag{ position:absolute; top:5px; right:5px; width:6px; height:6px; border-radius:50%; background:var(--amber); }
+.dcell .pend{ width:5px; height:5px; border-radius:50%; background:var(--yellow); }
+.duty-legend{ display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:14px; font-size:11.5px; color:var(--chalk-dim); }
+.duty-legend i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+.duty-exit-row{ display:flex; gap:8px; align-items:center; }
+.duty-exit-row .time-picker-field{ flex:1; min-width:0; }
+.duty-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+@media(max-width:560px){ .dcell{ min-height:42px; border-radius:8px; } .duty-wd, .duty-days{ gap:4px; } .dsub{ font-size:8.5px; } }
 </style>
 </head>
-<body>
+<body class="mode-boot">
 
 <div class="app">
   <nav class="rail" id="rail"></nav>
@@ -391,11 +486,21 @@ html[data-theme="light"] select{ background-image:url("data:image/svg+xml,%3Csvg
 <div class="overlay" id="overlay"><div class="modal" id="modalBody"></div></div>
 <div id="toast"></div>
 <div id="printArea"></div>
+<div class="overlay" id="clockOverlay" style="z-index:60;"><div class="modal" id="clockBody"></div></div>
+<div class="boot-splash" id="bootSplash"><div class="spinner"></div></div>
+<div class="auth-screen" id="authScreen"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ---------------- Data layer ---------------- */
-const STORAGE_KEY = 'classboardData_v1';
+const STORAGE_KEY = 'classboardData_v1';   // legacy local-only key (used once, to migrate old data into the account)
+/* ======= SUPABASE SETTINGS — paste your project values here (Supabase > Project Settings > API) ======= */
+const SUPABASE_URL = 'https://irialtxbicirhdzygyzx.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlyaWFsdHhiaWNpcmhkenlneXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyMzc0NjAsImV4cCI6MjEwNjgxMzQ2MH0.v5bgfkUQmFm6nTReEue0OQQibeRvW0pbexyQvvSVfEI';
+const CLOUD_TABLE = 'classboard_data';
+const CFG_KEY = 'classboardSupabaseCfg';
+/* =========================================================================================================== */
 const THEME_KEY = 'classboardTheme';
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const COURSE_COLOR_VARS = ['--c0','--c1','--c2','--c3','--c4','--c5','--c6'];
@@ -403,21 +508,40 @@ const TASK_TYPES = ['Theory','Lab'];
 const COURSE_TYPES = [{v:'theory',label:'Theory'},{v:'lab',label:'Lab'}];
 const STUDENT_STATUS = ['Regular','Diploma'];
 
+function defaultDuty(){ return { entries:{}, settings:{ weekend:[5,6], dutyStart:'09:00', dutyEnd:'17:00' } }; }
 function defaultData(){
-  return { profile:{name:'',department:'',university:'',photo:''}, semester:{name:'',start:'',end:''}, courses:[], routine:[], tasks:[], reminders:[], students:[], grades:[], attendance:[] };
+  return { profile:{name:'',department:'',university:'',photo:''}, semester:{name:'',start:'',end:''}, courses:[], routine:[], tasks:[], reminders:[], students:[], grades:[], attendance:[], duty:defaultDuty() };
 }
-function load(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return defaultData();
-    const d = JSON.parse(raw);
-    return Object.assign(defaultData(), d);
-  }catch(e){ return defaultData(); }
+function normalizeState(d){
+  const base = defaultData();
+  const out = Object.assign(base, (d && typeof d==='object') ? d : {});
+  const dd = (d && d.duty && typeof d.duty==='object') ? d.duty : {};
+  const ds = (dd.settings && typeof dd.settings==='object') ? dd.settings : {};
+  out.duty = {
+    entries: (dd.entries && typeof dd.entries==='object' && !Array.isArray(dd.entries)) ? dd.entries : {},
+    settings: {
+      weekend: Array.isArray(ds.weekend) ? ds.weekend : [5,6],
+      dutyStart: ds.dutyStart || '09:00',
+      dutyEnd: ds.dutyEnd || '17:00'
+    }
+  };
+  ['courses','routine','tasks','reminders','students','grades','attendance'].forEach(k=>{ if(!Array.isArray(out[k])) out[k] = []; });
+  ['profile','semester'].forEach(k=>{ if(!out[k] || typeof out[k]!=='object') out[k] = base[k]; });
+  return out;
 }
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+// Every edit in the app calls save(): it caches locally and schedules an automatic upload to the account.
+function save(){
+  if(!cloud.user) return;
+  cloud.dirty = true; cloud.seq++;
+  cacheWrite();
+  if(cloud.conflict) return;
+  setSync(navigator.onLine ? 'saving' : 'offline');
+  schedulePush(1200);
+}
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
-let state = load();
+let state = defaultData();
+let modalLocked = false;
 let activeTab = 'dashboard';
 let routineView = 'today'; // 'today' | 'full'
 let taskFilterCourse = 'all';
@@ -520,26 +644,26 @@ function openModal(html){
   document.getElementById('modalBody').innerHTML = html;
   document.getElementById('overlay').classList.add('show');
 }
-function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
-document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+function closeModal(){ modalLocked = false; document.getElementById('overlay').classList.remove('show'); }
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay' && !modalLocked) closeModal(); });
 
 /* ---------------- Analog Time Picker ---------------- */
 let clockState = null;
-function timeInputHtml(id, value24){
+function timeInputHtml(id, value24, defaultTime){
   return `<div class="time-picker-field" onclick="openClockPicker('${id}')">
-    <input type="text" id="${id}" data-time="${value24||''}" value="${value24?formatTime12(value24):''}" placeholder="Select time" readonly style="cursor:pointer;">
+    <input type="text" id="${id}" data-time="${value24||''}" data-default="${defaultTime||''}" value="${value24?formatTime12(value24):''}" placeholder="Select time" readonly style="cursor:pointer;">
     <span class="time-picker-ic">${ICONS.clock}</span>
   </div>`;
 }
 function openClockPicker(targetId){
   const input = document.getElementById(targetId);
-  const raw = input.dataset.time || '';
+  const raw = input.dataset.time || input.dataset.default || '';
   let h24 = 9, m = 0;
   if(raw){ const p = raw.split(':').map(Number); h24 = p[0]; m = p[1]; }
   let ampm = h24>=12? 'PM':'AM';
   let h12 = h24%12; if(h12===0) h12=12;
   clockState = { targetId, hour:h12, minute:m, ampm, mode:'hour' };
-  openModal(clockPickerHtml());
+  showClock();
 }
 function clockPt(index, total, radiusPct){
   const angle = (index/total)*2*Math.PI - Math.PI/2;
@@ -568,12 +692,12 @@ function clockPickerHtml(){
   return `
     <h3>Select Time</h3>
     <div class="clock-readout">
-      <button type="button" class="clock-readout-part ${isHour?'active':''}" onclick="clockState.mode='hour'; openModal(clockPickerHtml());">${String(s.hour).padStart(2,'0')}</button>
+      <button type="button" class="clock-readout-part ${isHour?'active':''}" onclick="clockState.mode='hour'; showClock();">${String(s.hour).padStart(2,'0')}</button>
       <span>:</span>
-      <button type="button" class="clock-readout-part ${!isHour?'active':''}" onclick="clockState.mode='minute'; openModal(clockPickerHtml());">${String(s.minute).padStart(2,'0')}</button>
+      <button type="button" class="clock-readout-part ${!isHour?'active':''}" onclick="clockState.mode='minute'; showClock();">${String(s.minute).padStart(2,'0')}</button>
       <div class="clock-ampm">
-        <button type="button" class="clock-ampm-btn ${s.ampm==='AM'?'active':''}" onclick="clockState.ampm='AM'; openModal(clockPickerHtml());">AM</button>
-        <button type="button" class="clock-ampm-btn ${s.ampm==='PM'?'active':''}" onclick="clockState.ampm='PM'; openModal(clockPickerHtml());">PM</button>
+        <button type="button" class="clock-ampm-btn ${s.ampm==='AM'?'active':''}" onclick="clockState.ampm='AM'; showClock();">AM</button>
+        <button type="button" class="clock-ampm-btn ${s.ampm==='PM'?'active':''}" onclick="clockState.ampm='PM'; showClock();">PM</button>
       </div>
     </div>
     <div class="clock-face">
@@ -582,7 +706,7 @@ function clockPickerHtml(){
       ${dots}
     </div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-ghost" onclick="closeClock()">Cancel</button>
       <button class="btn btn-primary" onclick="confirmClockPick()">Done</button>
     </div>
   `;
@@ -590,11 +714,11 @@ function clockPickerHtml(){
 function pickClockHour(h){
   clockState.hour = h;
   clockState.mode = 'minute';
-  openModal(clockPickerHtml());
+  showClock();
 }
 function pickClockMinute(m){
   clockState.minute = m;
-  openModal(clockPickerHtml());
+  showClock();
 }
 function confirmClockPick(){
   const s = clockState;
@@ -604,8 +728,8 @@ function confirmClockPick(){
   const input = document.getElementById(s.targetId);
   input.dataset.time = time24;
   input.value = formatTime12(time24);
-  clockState = null;
-  closeModal();
+  closeClock();
+  input.dispatchEvent(new Event('change'));
 }
 
 /* ---------------- Icons ---------------- */
@@ -641,8 +765,9 @@ const TABS = [
   {id:'students', label:'Students'},
   {id:'attendance', label:'Attendance'},
   {id:'grading', label:'Grading'},
+  {id:'duty', label:'Duty Log'},
   {id:'reminders', label:'Reminders'},
-  {id:'data', label:'Export'},
+  {id:'data', label:'Account'},
 ];
 function warningCount(){
   const t = state.tasks.filter(x=>!x.completed && x.deadline && daysBetween(todayISO(),x.deadline) <= 3).length;
@@ -658,10 +783,11 @@ function renderNav(){
       <span>${t.label}</span>
       ${t.id==='dashboard' && wc>0 ? `<span class="dot show"></span>`:''}
     </button>`).join('');
+  const syncBtn = `<button class="tab-btn sync-btn s-${cloud.status}" onclick="cloudSyncNow()" title="${syncTitle()}">${ICONS.cloud}<span>${SYNC_TEXT[cloud.status]}</span></button>`;
   const rail = document.getElementById('rail');
   rail.innerHTML = `<div class="brand" title="Teacher profile">${brandContent()}</div>` + html + `
-    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">${isDark? ICONS.sun : ICONS.moon}</button>`;
-  document.getElementById('bottomNav').innerHTML = html + `
+    <div class="rail-bottom">${syncBtn}<button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">${isDark? ICONS.sun : ICONS.moon}</button></div>`;
+  document.getElementById('bottomNav').innerHTML = html + syncBtn + `
     <button class="tab-btn" onclick="toggleTheme()">${isDark? ICONS.sun : ICONS.moon}<span>Theme</span></button>`;
 }
 function setTab(id){ activeTab = id; render(); window.scrollTo({top:0}); }
@@ -677,8 +803,10 @@ function render(){
   else if(activeTab==='students') main.innerHTML = renderStudents();
   else if(activeTab==='attendance') main.innerHTML = renderAttendance();
   else if(activeTab==='grading') main.innerHTML = renderGrading();
+  else if(activeTab==='duty') main.innerHTML = renderDuty();
   else if(activeTab==='reminders') main.innerHTML = renderReminders();
   else if(activeTab==='data') main.innerHTML = renderData();
+  if(activeTab==='duty') dutyAfterRender(); else dutyStopTimer();
 }
 
 /* ---------------- Dashboard ---------------- */
@@ -2081,69 +2209,6 @@ function deleteReminder(id){
 }
 
 /* ---------------- Data / Export ---------------- */
-function renderData(){
-  return `
-    <div class="topbar"><div><h1>Export & Backup</h1><div class="sub">Export/import your data to use it on another browser or device</div></div></div>
-    <div class="card">
-      <p class="card-title">Why is this needed?</p>
-      <div class="hint" style="font-size:13px; color:var(--chalk-dim);">
-        This app stores data in your browser's local storage — meaning your data lives only on this browser and this device. To use it on both your phone and laptop, or to avoid losing data if your browser is reset, export a JSON file regularly and import it on the other device.
-      </div>
-    </div>
-    <div class="grid2">
-      <div class="card">
-        <p class="card-title">JSON export / import</p>
-        <button class="btn btn-primary" style="width:100%; margin-bottom:10px;" onclick="exportJSON()">📦 Download JSON file</button>
-        <label class="btn btn-ghost" style="width:100%; display:block; text-align:center; box-sizing:border-box;">
-          📥 Import JSON file
-          <input type="file" accept="application/json" style="display:none;" onchange="importJSON(event)">
-        </label>
-        <div class="hint">Importing will replace all current data (courses, routine, tasks, students, grading, and attendance).</div>
-      </div>
-      <div class="card">
-        <p class="card-title">PDF export</p>
-        <button class="btn btn-primary" style="width:100%;" onclick="exportPDF()">🖨️ Print / Save as PDF</button>
-        <div class="hint">Choose "Save as PDF" in the print dialog. Includes semester info, routine, task progress, and reminders.</div>
-      </div>
-    </div>
-    <div class="card">
-      <p class="card-title" style="color:var(--danger);">Danger zone</p>
-      <button class="btn btn-danger" onclick="clearAllData()">Delete all data</button>
-    </div>
-  `;
-}
-function exportJSON(){
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const fname = (state.semester.name || 'classboard').replace(/[^a-zA-Z0-9_-]/g,'_');
-  a.href = url; a.download = `classboard_${fname}_${todayISO()}.json`;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-  toast('JSON file downloaded');
-}
-function importJSON(evt){
-  const file = evt.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e=>{
-    try{
-      const data = JSON.parse(e.target.result);
-      if(!data.courses || !data.tasks) throw new Error('invalid');
-      if(!confirm('All current data will be replaced. Continue?')) return;
-      state = Object.assign(defaultData(), data);
-      attendanceFilterCourse = null; attendanceDraftKey = '';
-      save(); toast('Data imported successfully'); render();
-    }catch(err){ toast('This file is not valid'); }
-  };
-  reader.readAsText(file);
-  evt.target.value = '';
-}
-function clearAllData(){
-  if(!confirm('Are you sure you want to delete all data? This cannot be undone.')) return;
-  if(!confirm('Final confirmation — all semesters, courses, routine, tasks, students, attendance, and reminders will be deleted.')) return;
-  state = defaultData(); attendanceFilterCourse = null; attendanceDraftKey = ''; save(); toast('All data deleted'); render();
-}
 function exportPDF(){
   const sem = state.semester, p = state.profile;
   let html = `<h1>${sem.name || 'Semester Planner'}</h1>`;
@@ -2178,8 +2243,1010 @@ function exportPDF(){
   setTimeout(()=>window.print(), 100);
 }
 
+/* ======================================================================
+   EXTRA ICONS + SMALL HELPERS
+   ====================================================================== */
+Object.assign(ICONS, {
+  duty:'<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M2 13h20"/></svg>',
+  cloud:'<svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>',
+  user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"/></svg>',
+  xmark:'<svg viewBox="0 0 24 24" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>'
+});
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function showClock(){ document.getElementById('clockBody').innerHTML = clockPickerHtml(); document.getElementById('clockOverlay').classList.add('show'); }
+function closeClock(){ document.getElementById('clockOverlay').classList.remove('show'); clockState = null; }
+document.getElementById('clockOverlay').addEventListener('click', e=>{ if(e.target.id==='clockOverlay') closeClock(); });
+function openLockedModal(html){ modalLocked = true; openModal(html); }
+
+/* ======================================================================
+   CLOUD  (Supabase: auth + one JSON document per user)
+   ====================================================================== */
+const cloud = { user:null, rev:0, seq:0, dirty:false, pushing:false, conflict:false, status:'synced', lastSync:null, lastError:'', timer:null, latest:null };
+let sb = null, appReady = false, entering = false, listenersReady = false;
+let authView = 'signin', authFlash = null, authBusy = false, authEmail = '';
+let recoveryMode = /type=recovery/.test(location.hash);
+
+function isPlaceholder(v){ return !v || /^PASTE_/.test(v); }
+function sbConfig(){
+  if(!isPlaceholder(SUPABASE_URL) && !isPlaceholder(SUPABASE_ANON_KEY)) return {url:SUPABASE_URL, key:SUPABASE_ANON_KEY};
+  try{ const c = JSON.parse(localStorage.getItem(CFG_KEY)||'null'); if(c && c.url && c.key) return c; }catch(e){}
+  return null;
+}
+function redirectUrl(){ return location.href.split('#')[0].split('?')[0]; }
+function setMode(m){ document.body.className = 'mode-'+m; }
+function isNetworkError(e){ const m = String((e&&e.message)||''); return !navigator.onLine || /failed to fetch|networkerror|load failed|network request failed|fetch/i.test(m); }
+function friendlyDbError(e){
+  const code = e && e.code, m = String((e&&e.message)||e||'');
+  if(code==='42P01' || code==='PGRST205' || /does not exist|schema cache/i.test(m)) return 'The database table "'+CLOUD_TABLE+'" was not found. Run supabase_setup.sql in your Supabase SQL Editor, then reload this page.';
+  if(code==='42501' || /row-level security|permission denied/i.test(m)) return 'The database refused access. Make sure the policies from supabase_setup.sql were created.';
+  if(isNetworkError(e)) return 'Can\u2019t reach the server. Check your internet connection.';
+  return m;
+}
+function friendlyAuthError(e){
+  const m = String((e&&e.message)||e||'');
+  if(/invalid login credentials/i.test(m)) return 'Incorrect email or password.';
+  if(/rate limit|too many|security purposes/i.test(m)) return 'Too many attempts. Please wait a few minutes and try again.';
+  if(/failed to fetch|networkerror|load failed/i.test(m)) return 'Can\u2019t reach the server. Check your internet connection.';
+  if(/same password|different from the old/i.test(m)) return 'Please choose a password different from your current one.';
+  if(/invalid api key|apikey/i.test(m)) return 'The Supabase key is not valid. Check SUPABASE_ANON_KEY.';
+  return m;
+}
+
+/* ---- local cache (per user) ---- */
+function cacheKey(uid){ return 'classboardCache_v2_'+uid; }
+function cacheWrite(){
+  if(!cloud.user) return;
+  try{ localStorage.setItem(cacheKey(cloud.user.id), JSON.stringify({rev:cloud.rev, dirty:cloud.dirty, state, at:Date.now()})); }catch(e){}
+}
+function cacheRead(uid){ try{ return JSON.parse(localStorage.getItem(cacheKey(uid))||'null'); }catch(e){ return null; } }
+
+/* ---- first-time migration from the old localStorage-only apps ---- */
+function localLegacyData(){
+  if(localStorage.getItem('classboardMigratedTo')) return null;
+  let cb = null, dEntries = null, dSettings = null;
+  try{ cb = JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'); }catch(e){}
+  try{ dEntries = JSON.parse(localStorage.getItem('dutylog_data_v1')||'null'); }catch(e){}
+  try{ dSettings = JSON.parse(localStorage.getItem('dutylog_settings_v1')||'null'); }catch(e){}
+  if(!cb && !dEntries) return null;
+  const s = normalizeState(cb||{});
+  if(dEntries && !(cb && cb.duty)){
+    s.duty.entries = dEntries;
+    if(dSettings && Array.isArray(dSettings.weekend)) s.duty.settings = normalizeState({duty:{settings:dSettings}}).duty.settings;
+  }
+  return s;
+}
+
+/* ---- sync status UI ---- */
+const SYNC_TEXT = {synced:'Synced', saving:'Saving', offline:'Offline', error:'Error', conflict:'Conflict'};
+function syncTitle(){
+  return ({synced:'All changes saved to the cloud', saving:'Saving changes\u2026', offline:'Offline \u2014 will sync when you\u2019re back online', error:'Couldn\u2019t save \u2014 will retry', conflict:'Newer cloud data found \u2014 needs your decision'})[cloud.status] || '';
+}
+function syncDetailHtml(){
+  const map = {
+    synced:['var(--green)','All changes saved to the cloud'],
+    saving:['var(--yellow)','Saving\u2026'],
+    offline:['var(--amber)','Offline \u2014 changes are kept on this device and will sync automatically'],
+    error:['var(--danger)','Couldn\u2019t save \u2014 retrying automatically'],
+    conflict:['var(--amber)','Waiting for your decision on newer cloud data']
+  };
+  const [c,t] = map[cloud.status] || map.synced;
+  const last = cloud.lastSync ? `<div style="margin-top:3px;">Last synced ${cloud.lastSync.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div>` : '';
+  const err = (cloud.status==='error' && cloud.lastError) ? `<div style="margin-top:3px;color:var(--danger);">${esc(cloud.lastError)}</div>` : '';
+  return `<span class="chip-swatch" style="display:inline-block;background:${c};margin-right:6px;"></span>${t}${last}${err}`;
+}
+function setSync(s, err){
+  cloud.status = s;
+  cloud.lastError = err ? friendlyDbError(err) : '';
+  updateSyncUI();
+}
+function updateSyncUI(){
+  document.querySelectorAll('.sync-btn').forEach(b=>{
+    b.className = 'tab-btn sync-btn s-'+cloud.status;
+    const sp = b.querySelector('span'); if(sp) sp.textContent = SYNC_TEXT[cloud.status];
+    b.title = syncTitle();
+  });
+  const d = document.getElementById('syncDetail'); if(d) d.innerHTML = syncDetailHtml();
+}
+
+/* ---- persistence hooks ---- */
+function schedulePush(ms){ clearTimeout(cloud.timer); cloud.timer = setTimeout(()=>cloudPush(), ms); }
+
+async function cloudPush(){
+  if(!sb || !cloud.user || cloud.pushing || cloud.conflict || !cloud.dirty) return;
+  if(!navigator.onLine){ setSync('offline'); return; }
+  cloud.pushing = true; setSync('saving');
+  const seq = cloud.seq;
+  let again = false, conflict = false;
+  try{
+    const payload = JSON.parse(JSON.stringify(state));
+    const r = await sb.from(CLOUD_TABLE).update({data:payload, rev:cloud.rev+1}).eq('user_id', cloud.user.id).eq('rev', cloud.rev).select('rev');
+    if(r.error) throw r.error;
+    if(!r.data || r.data.length===0){ conflict = true; }
+    else{
+      cloud.rev = r.data[0].rev;
+      cloud.lastSync = new Date();
+      if(cloud.seq===seq){ cloud.dirty = false; setSync('synced'); } else { again = true; }
+      cacheWrite();
+    }
+  }catch(e){
+    console.error('Cloud save failed', e);
+    setSync(isNetworkError(e)?'offline':'error', e);
+    schedulePush(15000);
+  }
+  cloud.pushing = false;
+  if(conflict) await handleConflict();
+  else if(again) schedulePush(300);
+}
+
+async function handleConflict(){
+  cloud.conflict = true; setSync('conflict');
+  let latest = null;
+  try{
+    const r = await sb.from(CLOUD_TABLE).select('data,rev').eq('user_id', cloud.user.id).maybeSingle();
+    if(r.error) throw r.error;
+    latest = r.data;
+  }catch(e){ cloud.conflict = false; setSync('error', e); schedulePush(15000); return; }
+  if(!latest){
+    // the row disappeared (deleted manually) — recreate it from this device
+    const ins = await sb.from(CLOUD_TABLE).insert({user_id:cloud.user.id, data:state, rev:1}).select('rev').single();
+    cloud.conflict = false;
+    if(ins.error){ setSync('error', ins.error); schedulePush(15000); return; }
+    cloud.rev = ins.data.rev; cloud.dirty = false; cloud.lastSync = new Date(); cacheWrite(); setSync('synced'); return;
+  }
+  cloud.latest = latest;
+  openLockedModal(`
+    <h3>Newer data found</h3>
+    <p style="font-size:13.5px; line-height:1.55; color:var(--chalk-dim); margin:0 0 6px;">
+      Your account has newer data saved from another device or tab, and this device also has changes that aren\u2019t saved yet. Which version should be kept?
+    </p>
+    <div class="modal-actions" style="flex-direction:column; align-items:stretch;">
+      <button class="btn btn-primary" onclick="conflictUseCloud()">Load the cloud version (discard changes on this device)</button>
+      <button class="btn" onclick="conflictKeepLocal()">Keep this device\u2019s version (overwrite the cloud)</button>
+      <button class="btn btn-ghost" onclick="exportJSON()">Download this device\u2019s data first</button>
+    </div>
+  `);
+}
+function conflictUseCloud(){
+  const l = cloud.latest; if(!l) return;
+  state = normalizeState(l.data); cloud.rev = l.rev; cloud.dirty = false; cloud.conflict = false; cloud.latest = null;
+  cloud.lastSync = new Date(); cacheWrite(); closeModal(); setSync('synced'); render(); toast('Loaded the latest cloud data');
+}
+function conflictKeepLocal(){
+  const l = cloud.latest; if(!l) return;
+  cloud.rev = l.rev; cloud.conflict = false; cloud.latest = null; cloud.dirty = true;
+  closeModal(); cloudPush();
+}
+
+/* returns 'updated' | 'same' | 'error' | 'skip' */
+async function cloudPull(){
+  if(!appReady || !cloud.user || cloud.dirty || cloud.pushing || cloud.conflict) return 'skip';
+  if(!navigator.onLine){ setSync('offline'); return 'error'; }
+  try{
+    const head = await sb.from(CLOUD_TABLE).select('rev').eq('user_id', cloud.user.id).maybeSingle();
+    if(head.error) throw head.error;
+    if(!head.data || head.data.rev <= cloud.rev){ if(cloud.status==='offline'||cloud.status==='error') setSync('synced'); return 'same'; }
+    const full = await sb.from(CLOUD_TABLE).select('data,rev').eq('user_id', cloud.user.id).maybeSingle();
+    if(full.error) throw full.error;
+    if(!full.data || cloud.dirty) return 'skip';
+    state = normalizeState(full.data.data); cloud.rev = full.data.rev; cloud.lastSync = new Date();
+    cacheWrite(); setSync('synced'); render();
+    return 'updated';
+  }catch(e){ console.error('Cloud refresh failed', e); setSync(isNetworkError(e)?'offline':'error', e); return 'error'; }
+}
+async function cloudSyncNow(){
+  if(!cloud.user) return;
+  if(cloud.conflict){ toast('Please resolve the conflict first'); return; }
+  if(cloud.dirty){ clearTimeout(cloud.timer); await cloudPush(); toast(cloud.dirty ? 'Couldn\u2019t sync yet \u2014 will retry' : 'Everything is synced'); return; }
+  const res = await cloudPull();
+  toast(res==='updated' ? 'Loaded the latest data' : res==='error' ? 'Couldn\u2019t reach the server' : 'Already up to date');
+}
+
+async function cloudLoadInitial(){
+  const uid = cloud.user.id;
+  const cache = cacheRead(uid);
+  let row = null, err = null;
+  try{
+    const r = await sb.from(CLOUD_TABLE).select('data,rev').eq('user_id', uid).maybeSingle();
+    if(r.error) throw r.error;
+    row = r.data;
+  }catch(e){ err = e; }
+
+  if(err){
+    if(cache && isNetworkError(err)){            // offline start: use the last cached copy
+      state = normalizeState(cache.state); cloud.rev = cache.rev || 0; cloud.dirty = !!cache.dirty;
+      setSync('offline'); return;
+    }
+    throw err;
+  }
+  if(!row){                                       // brand-new account
+    const legacy = localLegacyData();
+    const initial = legacy || normalizeState({});
+    const ins = await sb.from(CLOUD_TABLE).insert({user_id:uid, data:initial, rev:1}).select('rev').single();
+    if(ins.error){
+      if(ins.error.code==='23505') return cloudLoadInitial();   // another device created it a moment ago
+      throw ins.error;
+    }
+    state = initial; cloud.rev = ins.data.rev; cloud.dirty = false; cloud.lastSync = new Date();
+    if(legacy){ localStorage.setItem('classboardMigratedTo', uid); setTimeout(()=>toast('Your existing data on this device was uploaded to your account'), 400); }
+    cacheWrite(); setSync('synced'); return;
+  }
+  if(cache && cache.dirty){                       // unsynced edits from last time — push them (conflict dialog if cloud moved on)
+    state = normalizeState(cache.state); cloud.rev = cache.rev || 0; cloud.dirty = true; cloud.seq++;
+    setSync('saving'); setTimeout(()=>cloudPush(), 300); return;
+  }
+  state = normalizeState(row.data); cloud.rev = row.rev; cloud.dirty = false; cloud.lastSync = new Date();
+  cacheWrite(); setSync('synced');
+}
+
+function setupSyncListeners(){
+  if(listenersReady) return; listenersReady = true;
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='visible') cloudPull();
+    else if(cloud.dirty){ clearTimeout(cloud.timer); cloudPush(); }
+  });
+  window.addEventListener('online', ()=>{ if(cloud.dirty) cloudPush(); else cloudPull(); });
+  window.addEventListener('offline', ()=>setSync('offline'));
+  window.addEventListener('beforeunload', e=>{ if(cloud.dirty && cloud.user){ e.preventDefault(); e.returnValue = ''; } });
+}
+
+/* ---- session / app entry ---- */
+function initSupabase(){
+  if(sb) return 'ok';
+  const cfg = sbConfig();
+  if(!cfg) return 'config';
+  if(!window.supabase || !window.supabase.createClient) return 'lib';
+  sb = window.supabase.createClient(cfg.url, cfg.key, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true}});
+  sb.auth.onAuthStateChange((event, session)=>{ setTimeout(()=>onAuthEvent(event, session), 0); });
+  return 'ok';
+}
+function hashError(){
+  const h = location.hash.replace(/^#/,''); if(!h) return '';
+  try{ return new URLSearchParams(h).get('error_description') || ''; }catch(e){ return ''; }
+}
+function cleanUrl(){ if(location.hash || /[?&]code=/.test(location.search)) history.replaceState(null, '', location.pathname); }
+
+async function bootApp(){
+  setMode('boot');
+  const st = initSupabase();
+  if(st!=='ok'){ authView = st; setMode('auth'); renderAuth(); return; }
+  const he = hashError();
+  if(he){ authFlash = {type:'error', text:he}; cleanUrl(); }
+  try{
+    const {data} = await sb.auth.getSession();
+    if(recoveryMode && data.session){ authView = 'recovery'; setMode('auth'); renderAuth(); return; }
+    if(data.session) await enterApp(data.session);
+    else { authView = 'signin'; setMode('auth'); renderAuth(); }
+  }catch(e){
+    authView = 'signin'; setMode('auth'); renderAuth();
+    authMsg('error', friendlyAuthError(e));
+  }
+}
+
+async function enterApp(session, force){
+  if(entering) return;
+  if(appReady && cloud.user && cloud.user.id===session.user.id){
+    cloud.user = session.user;
+    if(force || document.body.className!=='mode-app'){ setMode('app'); render(); }
+    return;
+  }
+  entering = true;
+  try{
+    cloud.user = session.user; cloud.conflict = false;
+    setMode('boot');
+    await cloudLoadInitial();
+    appReady = true;
+    cleanUrl();
+    setMode('app'); render(); setupSyncListeners();
+  }catch(e){
+    console.error('Load failed', e);
+    cloud.user = null; appReady = false;
+    authView = 'loaderror'; authFlash = {type:'error', text:friendlyDbError(e)};
+    setMode('auth'); renderAuth();
+  }finally{ entering = false; }
+}
+
+function onAuthEvent(event, session){
+  if(event==='PASSWORD_RECOVERY'){ recoveryMode = true; authView = 'recovery'; setMode('auth'); renderAuth(); return; }
+  if(event==='SIGNED_IN' && session && !recoveryMode){ enterApp(session); return; }
+  if(event==='SIGNED_OUT'){ if(appReady || cloud.user) handleSignedOut(); return; }
+  if(event==='TOKEN_REFRESHED' && session && cloud.user) cloud.user = session.user;
+}
+function handleSignedOut(){
+  clearTimeout(cloud.timer);
+  appReady = false; cloud.user = null; cloud.dirty = false; cloud.rev = 0; cloud.conflict = false; cloud.pushing = false; cloud.latest = null;
+  state = defaultData(); dutyStopTimer(); closeModal(); closeClock();
+  authView = 'signin'; setMode('auth'); renderAuth();
+}
+async function signOut(){
+  if(cloud.dirty){
+    clearTimeout(cloud.timer); await cloudPush();
+    if(cloud.dirty && !confirm('Some recent changes haven\u2019t reached the cloud yet. Sign out anyway and lose them?')) return;
+  }
+  const uid = cloud.user && cloud.user.id;
+  try{ await sb.auth.signOut(); }catch(e){}
+  if(uid) localStorage.removeItem(cacheKey(uid));      // don't leave data behind on shared devices
+  handleSignedOut();
+}
+
+/* ---- auth screen ---- */
+function authMsg(type, text){
+  const m = document.getElementById('authMsg'); if(!m) return;
+  m.className = 'auth-msg' + (text ? ' '+type : ''); m.textContent = text || '';
+}
+function authGo(view){
+  const e = document.getElementById('aEmail'); if(e) authEmail = e.value.trim();
+  authView = view; authFlash = null; renderAuth();
+}
+function authTogglePw(id, btn){
+  const i = document.getElementById(id); if(!i) return;
+  const show = i.type==='password'; i.type = show ? 'text' : 'password'; btn.textContent = show ? 'Hide' : 'Show';
+}
+function pwField(id, label, ac){
+  return `<div class="field"><label for="${id}">${label}</label><div class="pw-wrap"><input id="${id}" type="password" autocomplete="${ac}"><button type="button" class="pw-toggle" onclick="authTogglePw('${id}',this)">Show</button></div></div>`;
+}
+function renderAuth(){
+  const el = document.getElementById('authScreen');
+  const emailField = `<div class="field"><label for="aEmail">Email</label><input id="aEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="${esc(authEmail)}"></div>`;
+  const tabs = (authView==='signin' || authView==='signup')
+    ? `<div class="auth-tabs"><button type="button" class="auth-tab ${authView==='signin'?'active':''}" onclick="authGo('signin')">Sign in</button><button type="button" class="auth-tab ${authView==='signup'?'active':''}" onclick="authGo('signup')">Create account</button></div>` : '';
+  let sub = 'Teacher\u2019s Portal', body = '';
+  if(authView==='signin'){
+    body = `<form onsubmit="return authSubmit(event)" novalidate>${emailField}${pwField('aPass','Password','current-password')}
+      <button class="btn btn-primary auth-submit" type="submit">Sign in</button>
+      <div class="auth-links"><button type="button" class="auth-link" onclick="authGo('forgot')">Forgot password?</button></div></form>`;
+  } else if(authView==='signup'){
+    body = `<form onsubmit="return authSubmit(event)" novalidate>${emailField}${pwField('aPass','Password (at least 8 characters)','new-password')}${pwField('aPass2','Confirm password','new-password')}
+      <button class="btn btn-primary auth-submit" type="submit">Create account</button></form>`;
+  } else if(authView==='forgot'){
+    sub = 'Reset your password';
+    body = `<form onsubmit="return authSubmit(event)" novalidate><div class="hint" style="margin:0 0 12px;">Enter your account email and we\u2019ll send you a link to choose a new password.</div>${emailField}
+      <button class="btn btn-primary auth-submit" type="submit">Send reset link</button>
+      <div class="auth-links"><button type="button" class="auth-link" onclick="authGo('signin')">\u2190 Back to sign in</button></div></form>`;
+  } else if(authView==='recovery'){
+    sub = 'Choose a new password';
+    body = `<form onsubmit="return authSubmit(event)" novalidate>${pwField('aPass','New password (at least 8 characters)','new-password')}${pwField('aPass2','Confirm new password','new-password')}
+      <button class="btn btn-primary auth-submit" type="submit">Update password</button></form>`;
+  } else if(authView==='confirm'){
+    sub = 'Confirm your email';
+    body = `<button class="btn btn-ghost auth-submit" type="button" onclick="authResend()">Resend confirmation email</button>
+      <div class="auth-links"><button type="button" class="auth-link" onclick="authGo('signin')">\u2190 Back to sign in</button></div>`;
+  } else if(authView==='config'){
+    sub = 'Connect your Supabase project';
+    body = `<form onsubmit="return authSubmit(event)" novalidate>
+      <div class="field"><label for="aUrl">Project URL</label><input id="aUrl" placeholder="https://xxxxxxxx.supabase.co" autocomplete="off"></div>
+      <div class="field"><label for="aKey">Anon / publishable key</label><input id="aKey" placeholder="eyJ... or sb_publishable_..." autocomplete="off"></div>
+      <button class="btn btn-primary auth-submit" type="submit">Save &amp; continue</button>
+      <div class="hint">Find both in Supabase \u2192 Project Settings \u2192 API. You can also paste them into <b>SUPABASE_URL</b> and <b>SUPABASE_ANON_KEY</b> at the top of this file\u2019s script.</div></form>`;
+  } else if(authView==='lib'){
+    sub = 'Couldn\u2019t load';
+    body = `<div class="hint" style="font-size:13px; color:var(--chalk-dim); margin:0 0 14px;">The sign-in library didn\u2019t load. Check your internet connection and try again.</div>
+      <button class="btn btn-primary auth-submit" type="button" onclick="location.reload()">Reload</button>`;
+  } else if(authView==='loaderror'){
+    sub = 'Couldn\u2019t load your data';
+    body = `<button class="btn btn-primary auth-submit" type="button" onclick="bootApp()">Try again</button>
+      <div class="auth-links"><button type="button" class="auth-link" onclick="authSignOutOnly()">Sign out</button></div>`;
+  }
+  el.innerHTML = `<div class="auth-card"><div class="auth-logo"></div><h1 class="auth-title">ClassBoard</h1><p class="auth-sub">${sub}</p>${tabs}<div id="authMsg" class="auth-msg"></div>${body}</div>`;
+  if(authFlash){ authMsg(authFlash.type, authFlash.text); authFlash = null; }
+  const first = el.querySelector('input');
+  if(first && !/Mobi|Android/i.test(navigator.userAgent)) first.focus();
+}
+function setAuthBusy(b){
+  const btn = document.querySelector('.auth-submit'); if(!btn) return;
+  btn.disabled = b;
+  if(b){ btn.dataset.label = btn.textContent; btn.textContent = 'Please wait\u2026'; }
+  else if(btn.dataset.label){ btn.textContent = btn.dataset.label; }
+}
+async function authSubmit(ev){
+  ev.preventDefault();
+  if(authBusy) return false;
+  const v = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+  const email = v('aEmail').trim();
+  if(document.getElementById('aEmail')) authEmail = email;
+  authBusy = true; setAuthBusy(true); authMsg('', '');
+  try{
+    if(authView==='signin') await doSignIn(email, v('aPass'));
+    else if(authView==='signup') await doSignUp(email, v('aPass'), v('aPass2'));
+    else if(authView==='forgot') await doForgot(email);
+    else if(authView==='recovery') await doRecovery(v('aPass'), v('aPass2'));
+    else if(authView==='config') doSaveConfig(v('aUrl').trim(), v('aKey').trim());
+  }catch(e){ authMsg('error', friendlyAuthError(e)); }
+  finally{ authBusy = false; setAuthBusy(false); }
+  return false;
+}
+function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+async function doSignIn(email, pass){
+  if(!validEmail(email)){ authMsg('error', 'Enter a valid email address.'); return; }
+  if(!pass){ authMsg('error', 'Enter your password.'); return; }
+  const {data, error} = await sb.auth.signInWithPassword({email, password:pass});
+  if(error){
+    if(/not confirmed/i.test(error.message)){
+      authView = 'confirm'; authFlash = {type:'info', text:'Your email isn\u2019t confirmed yet. Open the confirmation link we emailed you, or resend it below.'}; renderAuth(); return;
+    }
+    throw error;
+  }
+  if(data.session) enterApp(data.session);
+}
+async function doSignUp(email, pass, pass2){
+  if(!validEmail(email)){ authMsg('error', 'Enter a valid email address.'); return; }
+  if(pass.length < 8){ authMsg('error', 'Use a password with at least 8 characters.'); return; }
+  if(pass !== pass2){ authMsg('error', 'The two passwords don\u2019t match.'); return; }
+  const {data, error} = await sb.auth.signUp({email, password:pass, options:{emailRedirectTo:redirectUrl()}});
+  if(error) throw error;
+  if(data.session){ enterApp(data.session); return; }                           // email confirmation turned off
+  if(data.user && Array.isArray(data.user.identities) && data.user.identities.length===0){
+    authView = 'signin'; authFlash = {type:'error', text:'This email is already registered. Sign in, or use \u201cForgot password?\u201d.'}; renderAuth(); return;
+  }
+  authView = 'confirm'; authFlash = {type:'success', text:'We sent a confirmation link to '+email+'. Open it, then come back and sign in.'}; renderAuth();
+}
+async function doForgot(email){
+  if(!validEmail(email)){ authMsg('error', 'Enter the email address of your account.'); return; }
+  const {error} = await sb.auth.resetPasswordForEmail(email, {redirectTo:redirectUrl()});
+  if(error) throw error;
+  authView = 'signin'; authFlash = {type:'success', text:'If an account exists for '+email+', a password reset link is on its way. Check your inbox (and spam folder).'}; renderAuth();
+}
+async function doRecovery(pass, pass2){
+  if(pass.length < 8){ authMsg('error', 'Use a password with at least 8 characters.'); return; }
+  if(pass !== pass2){ authMsg('error', 'The two passwords don\u2019t match.'); return; }
+  const {error} = await sb.auth.updateUser({password:pass});
+  if(error) throw error;
+  recoveryMode = false; cleanUrl();
+  const {data} = await sb.auth.getSession();
+  if(data.session){ toast('Password updated'); await enterApp(data.session, true); }
+  else { authView = 'signin'; authFlash = {type:'success', text:'Password updated. Please sign in.'}; renderAuth(); }
+}
+async function authResend(){
+  if(!authEmail || !validEmail(authEmail)){ authGo('signin'); authMsg('error', 'Enter your email, then try signing in again to get a new link.'); return; }
+  try{
+    const {error} = await sb.auth.resend({type:'signup', email:authEmail, options:{emailRedirectTo:redirectUrl()}});
+    if(error) throw error;
+    authMsg('success', 'Confirmation email sent to '+authEmail+'.');
+  }catch(e){ authMsg('error', friendlyAuthError(e)); }
+}
+function doSaveConfig(url, key){
+  if(!/^https:\/\/.+/.test(url)){ authMsg('error', 'Enter the full project URL, starting with https://'); return; }
+  if(key.length < 20){ authMsg('error', 'Paste the anon / publishable key.'); return; }
+  localStorage.setItem(CFG_KEY, JSON.stringify({url:url.replace(/\/+$/,''), key}));
+  location.reload();
+}
+async function authSignOutOnly(){ try{ if(sb) await sb.auth.signOut(); }catch(e){} authView = 'signin'; renderAuth(); }
+
+/* ---- change password (signed in) ---- */
+function openChangePassword(){
+  openModal(`
+    <h3>Change password</h3>
+    <div class="field"><label>New password (at least 8 characters)</label><input type="password" id="cpPass" autocomplete="new-password"></div>
+    <div class="field"><label>Confirm new password</label><input type="password" id="cpPass2" autocomplete="new-password"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveNewPassword()">Update password</button></div>`);
+}
+async function saveNewPassword(){
+  const p = document.getElementById('cpPass').value, p2 = document.getElementById('cpPass2').value;
+  if(p.length < 8){ toast('Use at least 8 characters'); return; }
+  if(p !== p2){ toast('The passwords don\u2019t match'); return; }
+  try{
+    const {error} = await sb.auth.updateUser({password:p});
+    if(error) throw error;
+    closeModal(); toast('Password updated');
+  }catch(e){ toast(friendlyAuthError(e)); }
+}
+
+/* ======================================================================
+   ACCOUNT & BACKUP TAB
+   ====================================================================== */
+function renderData(){
+  const email = cloud.user ? (cloud.user.email || '') : '';
+  return `
+    <div class="topbar"><div><h1>Account & Backup</h1><div class="sub">Cloud sync across your devices, plus manual backups</div></div></div>
+    <div class="grid2">
+      <div class="card">
+        <p class="card-title">Account</p>
+        <div class="profile-header" style="margin-bottom:14px;">
+          <div class="avatar-lg" style="width:48px; height:48px; font-size:18px; border-radius:12px;">${esc(email.slice(0,1).toUpperCase() || '?')}</div>
+          <div style="min-width:0;">
+            <div class="profile-name" style="font-size:15px; word-break:break-all;">${esc(email)}</div>
+            <div class="profile-sub" id="syncDetail">${syncDetailHtml()}</div>
+          </div>
+        </div>
+        <div class="duty-actions">
+          <button class="btn btn-primary btn-sm" onclick="cloudSyncNow()">Sync now</button>
+          <button class="btn btn-ghost btn-sm" onclick="openChangePassword()">Change password</button>
+          <button class="btn btn-danger btn-sm" onclick="signOut()">Sign out</button>
+        </div>
+      </div>
+      <div class="card">
+        <p class="card-title">Cloud sync</p>
+        <div class="hint" style="font-size:13px; color:var(--chalk-dim); margin-top:0;">
+          Everything \u2014 courses, routine, tasks, students, grading, attendance, reminders and the Duty Log \u2014 is saved to your account automatically a moment after each change. Sign in with the same email on any phone or computer to see the same data.
+        </div>
+        <div class="hint">If you edit on two devices at the same time, ClassBoard asks which version to keep. A copy is cached in this browser for faster loading and removed when you sign out.</div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <p class="card-title">JSON backup</p>
+        <button class="btn btn-primary" style="width:100%; margin-bottom:10px;" onclick="exportJSON()">\ud83d\udce6 Download backup (JSON)</button>
+        <label class="btn btn-ghost" style="width:100%; display:block; text-align:center; box-sizing:border-box;">
+          \ud83d\udce5 Import backup (JSON)
+          <input type="file" accept="application/json,.json" style="display:none;" onchange="importJSON(event)">
+        </label>
+        <div class="hint">The backup contains all your data, including the Duty Log. Importing replaces everything in your account with the file\u2019s contents (a backup from before the Duty Log existed keeps your current duty entries). Backup files from the old standalone Duty Log app are accepted too \u2014 you\u2019ll be asked whether to merge or replace.</div>
+      </div>
+      <div class="card">
+        <p class="card-title">PDF export</p>
+        <button class="btn btn-primary" style="width:100%;" onclick="exportPDF()">\ud83d\udda8\ufe0f Print / Save as PDF</button>
+        <div class="hint">Choose "Save as PDF" in the print dialog. Includes semester info, routine, task progress, and reminders.</div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="card-title" style="color:var(--danger);">Danger zone</p>
+      <button class="btn btn-danger" onclick="clearAllData()">Delete all data</button>
+      <div class="hint">Erases everything in your account (and on this device). Download a backup first if you might need it.</div>
+    </div>
+  `;
+}
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const fname = (state.semester.name || 'classboard').replace(/[^a-zA-Z0-9_-]/g,'_');
+  a.href = url; a.download = `classboard_${fname}_${todayISO()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast('JSON file downloaded');
+}
+function isLegacyDutyFile(d){
+  if(!d || typeof d!=='object' || Array.isArray(d) || d.courses) return false;
+  if(d.settings && Array.isArray(d.settings.weekend) && d.data && typeof d.data==='object') return true;
+  const keys = Object.keys(d);
+  return keys.length>0 && keys.every(k=>/^\d{4}-\d{2}-\d{2}$/.test(k));
+}
+function importJSON(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      if(isLegacyDutyFile(data)){ dutyImportParsed(data); return; }
+      if(!data || !data.courses || !data.tasks) throw new Error('invalid');
+      if(!confirm('All current data will be replaced. Continue?')) return;
+      const next = normalizeState(data);
+      if(!data.duty) next.duty = state.duty;          // older backups have no Duty Log section — keep current entries
+      state = next;
+      attendanceFilterCourse = null; attendanceDraftKey = '';
+      save(); toast('Data imported successfully'); render();
+    }catch(err){ toast('This file is not valid'); }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+function clearAllData(){
+  if(!confirm('Are you sure you want to delete all data? This cannot be undone.')) return;
+  if(!confirm('Final confirmation \u2014 all semesters, courses, routine, tasks, students, attendance, reminders and Duty Log entries will be deleted from your account.')) return;
+  state = defaultData(); attendanceFilterCourse = null; attendanceDraftKey = ''; save(); toast('All data deleted'); render();
+}
+
+/* ======================================================================
+   DUTY LOG  (merged from the standalone Duty Log app)
+   ====================================================================== */
+const DUTY_WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DUTY_WD_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DUTY_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+let dutyViewYear = new Date().getFullYear(), dutyViewMonth = new Date().getMonth();
+let dutyTimerInt = null;
+let dutyModalState = {date:null, mode:'work', offType:'leave'};
+let dutySettingsDraft = [];
+let dutyPending = null;
+
+function dEntries(){ return state.duty.entries; }
+function dSettings(){ return state.duty.settings; }
+function dKey(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+function dTodayKey(){ return isoLocal(new Date()); }
+function dMin(t){ if(!t) return null; const [h,m] = t.split(':').map(Number); return h*60+m; }
+function dHM(totalMin){ const a = Math.abs(totalMin); return Math.floor(a/60)+'h '+String(a%60).padStart(2,'0')+'m'; }
+function dDur(entry, exit){
+  const a = dMin(entry), b = dMin(exit);
+  if(a==null || b==null) return null;
+  let diff = b - a; if(diff < 0) diff += 1440;           // overnight shift fallback
+  return {hours:Math.floor(diff/60), minutes:diff%60, total:diff, label:dHM(diff)};
+}
+function dIsWeekend(dObj){ return dSettings().weekend.includes(dObj.getDay()); }
+// "leave" = your own leave (still an expected duty day). "holiday" = office closed (no duty expected).
+// Entries saved without an offType are treated as 'holiday'.
+function dOffType(e){ return (e && e.type==='off' && e.offType) ? e.offType : 'holiday'; }
+function dDayStatus(y,m,d){
+  const key = dKey(y,m,d), dObj = new Date(y,m,d), entry = dEntries()[key];
+  const isToday = key === dTodayKey();
+  const isFuture = dObj > new Date(new Date().setHours(0,0,0,0));
+  if(entry && entry.type==='work'){
+    if(entry.exit) return {status:'worked', key, entry};
+    return {status: isToday ? 'in-progress' : 'incomplete', key, entry};
+  }
+  if(entry && entry.type==='off') return {status:'off', key, entry};
+  if(isFuture) return {status:'future', key, entry:null};
+  if(dIsWeekend(dObj)) return {status:'weekend', key, entry:null};
+  if(isToday) return {status:'today-pending', key, entry:null};
+  return {status:'missed', key, entry:null};
+}
+function dFlags(entry){
+  const f = {late:false, early:false};
+  if(!entry || entry.type!=='work') return f;
+  const st = dMin(dSettings().dutyStart), en = dMin(dSettings().dutyEnd), a = dMin(entry.entry);
+  if(a!=null && st!=null && a > st) f.late = true;
+  if(entry.exit){ const x = dMin(entry.exit); if(x!=null && en!=null && x < en) f.early = true; }
+  return f;
+}
+function dDailyMin(){
+  const s = dMin(dSettings().dutyStart), e = dMin(dSettings().dutyEnd);
+  if(s==null || e==null) return 0;
+  let diff = e - s; if(diff < 0) diff += 1440;
+  return diff;
+}
+function dMonthSummary(y,m){
+  const dim = new Date(y,m+1,0).getDate(), daily = dDailyMin();
+  let present=0, missed=0, leave=0, holiday=0, weekend=0, worked=0, late=0, early=0, expDays=0, expMin=0;
+  for(let d=1; d<=dim; d++){
+    const info = dDayStatus(y,m,d), wknd = dIsWeekend(new Date(y,m,d));
+    if(info.status==='future') continue;
+    if(info.status==='off'){
+      if(dOffType(info.entry)==='holiday') holiday++;
+      else { leave++; if(!wknd){ expDays++; expMin += daily; } }
+      continue;
+    }
+    if(info.status==='weekend'){ weekend++; continue; }
+    expDays++; expMin += daily;
+    if(info.status==='worked'){
+      present++;
+      const du = dDur(info.entry.entry, info.entry.exit); if(du) worked += du.total;
+      const fl = dFlags(info.entry); if(fl.late) late++; if(fl.early) early++;
+    } else if(info.status==='in-progress' || info.status==='incomplete'){
+      present++; if(dFlags(info.entry).late) late++;
+    } else if(info.status==='missed'){ missed++; }
+  }
+  return {present, missed, leave, holiday, weekend, worked, late, early, expDays, expMin, daily};
+}
+
+/* ---- timer ---- */
+function dutyStopTimer(){ if(dutyTimerInt){ clearInterval(dutyTimerInt); dutyTimerInt = null; } }
+function dFmtHMS(sec){
+  const a = Math.max(0, Math.floor(sec)), p = n=>String(n).padStart(2,'0');
+  return p(Math.floor(a/3600))+':'+p(Math.floor((a%3600)/60))+':'+p(a%60);
+}
+function dutyUpdateTimer(entryT){
+  const valEl = document.getElementById('dutyTimerVal'), lblEl = document.getElementById('dutyTimerLbl');
+  if(!valEl){ dutyStopTimer(); return; }
+  const endT = dSettings().dutyEnd;
+  if(!endT || !entryT){ valEl.textContent = '\u2014'; return; }
+  const [eh,em] = entryT.split(':').map(Number), [xh,xm] = endT.split(':').map(Number), now = new Date();
+  const entryDt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em, 0, 0);
+  let target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), xh, xm, 0, 0);
+  if(target <= entryDt) target = new Date(target.getTime() + 86400000);   // overnight duty
+  const remain = target - now;
+  if(remain > 0){ lblEl.textContent = 'Time left in duty'; valEl.textContent = dFmtHMS(remain/1000); valEl.style.color = 'var(--yellow)'; }
+  else { lblEl.textContent = 'Duty time over \u00b7 overtime running'; valEl.textContent = dFmtHMS(-remain/1000); valEl.style.color = 'var(--danger)'; }
+}
+function dutyAfterRender(){
+  const e = dEntries()[dTodayKey()];
+  dutyStopTimer();
+  if(e && e.type==='work' && !e.exit){ dutyUpdateTimer(e.entry); dutyTimerInt = setInterval(()=>dutyUpdateTimer(e.entry), 1000); }
+}
+
+/* ---- main view ---- */
+function dutyTodayHtml(){
+  const key = dTodayKey(), e = dEntries()[key];
+  const dateStr = new Date().toLocaleDateString('en-US',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  const head = `<p class="card-title">Today</p><div class="hint" style="margin:-6px 0 10px;">${dateStr}</div>`;
+  const openBtn = (label, primary)=>`<button class="btn ${primary?'btn-primary':''}" style="margin-top:12px; width:100%;" onclick="dutyOpenDay('${key}')">${label}</button>`;
+  if(e && e.type==='work' && e.exit){
+    const du = dDur(e.entry, e.exit), fl = dFlags(e);
+    const note = [fl.late ? 'Arrived late'+(e.lateReason?' \u2014 '+esc(e.lateReason):'') : '', fl.early ? 'Left early'+(e.earlyReason?' \u2014 '+esc(e.earlyReason):'') : ''].filter(Boolean).join(' \u00b7 ');
+    return `${head}
+      <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;"><div class="duty-today-big">${du?du.label:'\u2014'}</div><div class="hint" style="margin:0;">on duty today</div></div>
+      <div class="mono" style="font-size:12.5px; color:var(--chalk-dim); margin-top:6px;">${formatTime12(e.entry)} \u2192 ${formatTime12(e.exit)}</div>
+      ${note?`<div class="duty-note">${note}</div>`:''}${openBtn('Edit entry')}`;
+  }
+  if(e && e.type==='work'){
+    const fl = dFlags(e);
+    return `${head}
+      <div class="duty-status-line" style="color:var(--yellow);">Currently on duty</div>
+      <div class="mono" style="font-size:12.5px; color:var(--chalk-dim); margin-top:6px;">Entry: ${formatTime12(e.entry)}</div>
+      ${fl.late?`<div class="duty-note">Arrived late${e.lateReason?' \u2014 '+esc(e.lateReason):''}</div>`:''}
+      <div class="duty-timer"><div class="duty-timer-lbl" id="dutyTimerLbl">Time left in duty</div><div class="duty-timer-val" id="dutyTimerVal">--:--:--</div></div>
+      ${openBtn('Add exit time', true)}`;
+  }
+  if(e && e.type==='off'){
+    const holiday = dOffType(e)==='holiday';
+    return `${head}<div class="duty-status-line" style="color:${holiday?'var(--purple)':'var(--amber)'};">${holiday?'Office closed today':'Personal leave today'}${e.label?' \u2014 '+esc(e.label):''}</div>${openBtn('Edit entry')}`;
+  }
+  return `${head}<div class="duty-status-line">Today\u2019s entry hasn\u2019t been added yet</div>${openBtn('Add entry', true)}`;
+}
+function dutyCalendarHtml(){
+  const y = dutyViewYear, m = dutyViewMonth, dim = new Date(y,m+1,0).getDate(), first = new Date(y,m,1).getDay();
+  const wd = DUTY_WD.map((w,i)=>`<span class="${dSettings().weekend.includes(i)?'wk':''}">${w}</span>`).join('');
+  let cells = '';
+  for(let i=0;i<first;i++) cells += '<div class="dcell empty"></div>';
+  for(let d=1; d<=dim; d++){
+    const info = dDayStatus(y,m,d), e = info.entry;
+    let cls = info.status, sub = '', flag = '', pend = '', tip = [];
+    if(info.status==='worked'){
+      const du = dDur(e.entry, e.exit); sub = du ? du.hours+'h'+String(du.minutes).padStart(2,'0')+'m' : '';
+      const fl = dFlags(e);
+      if(fl.late){ flag = '<span class="flag"></span>'; tip.push('Late'+(e.lateReason?': '+e.lateReason:'')); }
+      if(fl.early){ flag = '<span class="flag"></span>'; tip.push('Left early'+(e.earlyReason?': '+e.earlyReason:'')); }
+    } else if(info.status==='in-progress' || info.status==='incomplete'){
+      cls = 'progress'; sub = info.status==='in-progress' ? 'On duty' : 'No exit';
+      if(dFlags(e).late){ flag = '<span class="flag"></span>'; tip.push('Late'+(e.lateReason?': '+e.lateReason:'')); }
+    } else if(info.status==='off'){
+      const ot = dOffType(e); cls = 'off type-'+ot; sub = ot==='holiday' ? 'Closed' : 'Leave';
+      if(e.label) tip.push(e.label);
+    } else if(info.status==='today-pending'){ cls = 'pending'; pend = '<span class="pend"></span>'; }
+    if(info.key===dTodayKey()) cls += ' is-today';
+    cells += `<button type="button" class="dcell ${cls}" onclick="dutyOpenDay('${info.key}')"${tip.length?` title="${esc(tip.join(' \u00b7 '))}"`:''}><span class="dnum">${d}</span>${sub?`<span class="dsub">${sub}</span>`:''}${pend}${flag}</button>`;
+  }
+  const lg = (c,t)=>`<span><i style="background:${c};"></i>${t}</span>`;
+  return `
+    <div class="duty-cal-head">
+      <button class="btn btn-ghost btn-icon" onclick="dutyShiftMonth(-1)" title="Previous month"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <h2>${DUTY_MONTHS[m]} ${y}</h2>
+      <button class="btn btn-ghost btn-icon" onclick="dutyShiftMonth(1)" title="Next month"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+    <div class="duty-wd">${wd}</div>
+    <div class="duty-days">${cells}</div>
+    <div class="duty-legend">
+      ${lg('var(--green)','Duty done')}${lg('var(--yellow)','On duty / no exit')}${lg('var(--danger)','Absent')}${lg('var(--amber)','Personal leave')}${lg('var(--purple)','Office closed')}${lg('var(--chalk-faint)','Weekly holiday')}${lg('var(--amber)','Late / left early (dot)')}
+    </div>`;
+}
+function renderDuty(){
+  const y = dutyViewYear, m = dutyViewMonth, s = dMonthSummary(y,m);
+  const stat = (n,l,c)=>`<div class="duty-stat"><div class="duty-stat-num" style="color:${c};">${n}</div><div class="duty-stat-lbl">${l}</div></div>`;
+  const diff = s.worked - s.expMin;
+  const isCurrent = (y===new Date().getFullYear() && m===new Date().getMonth());
+  return `
+    <div class="topbar">
+      <div><h1>Duty Log</h1><div class="sub">Office attendance and duty hours</div></div>
+      <div class="topbar-actions"><button class="btn btn-ghost" onclick="dutyOpenSettings()">${ICONS.setup.replace('<svg','<svg width="15" height="15"')} Duty settings</button></div>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="card">${dutyTodayHtml()}</div>
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px;">
+            <p class="card-title" style="margin:0;">Calendar</p>
+            ${isCurrent?'':`<button class="btn btn-ghost btn-sm" onclick="dutyGoToday()">Back to this month</button>`}
+          </div>
+          ${dutyCalendarHtml()}
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <p class="card-title">${DUTY_MONTHS[m]} summary</p>
+          <div class="duty-stats">
+            ${stat(s.present,'Present','var(--green)')}${stat(s.missed,'Absent','var(--danger)')}${stat(s.leave,'Personal leave','var(--amber)')}${stat(s.holiday,'Office closed','var(--purple)')}
+            ${stat(dHM(s.worked),'Hours worked','var(--yellow)')}${stat(dHM(s.expMin),'Expected hours','var(--chalk-dim)')}${stat(s.late,'Late','var(--amber)')}${stat(s.early,'Left early','var(--amber)')}
+          </div>
+          <div class="duty-diff"><span>Expected duty days: <b>${s.expDays}</b></span><span>Actual \u2212 expected: <b style="color:${diff<0?'var(--danger)':'var(--green)'};">${diff<0?'\u2212':'+'}${dHM(diff)}</b></span></div>
+          <div class="hint">Office-closed days are left out of expected hours. Personal-leave days still count as expected duty days.</div>
+        </div>
+        <div class="card">
+          <p class="card-title">Export & backup</p>
+          <div class="duty-actions">
+            <button class="btn btn-primary btn-sm" onclick="dutyExportPDF()">${ICONS.pdf} ${DUTY_MONTHS[m]} PDF</button>
+            <button class="btn btn-ghost btn-sm" onclick="dutyExportJSON()">Duty backup (JSON)</button>
+            <label class="btn btn-ghost btn-sm">Import duty backup<input type="file" accept="application/json,.json" style="display:none;" onchange="dutyImportFile(event)"></label>
+          </div>
+          <div class="hint">Your Duty Log is also part of the full backup and the cloud sync \u2014 these are for working with the Duty Log on its own, including files from the old standalone app.</div>
+        </div>
+      </div>
+    </div>`;
+}
+function dutyShiftMonth(delta){
+  dutyViewMonth += delta;
+  if(dutyViewMonth < 0){ dutyViewMonth = 11; dutyViewYear--; }
+  if(dutyViewMonth > 11){ dutyViewMonth = 0; dutyViewYear++; }
+  render();
+}
+function dutyGoToday(){ const n = new Date(); dutyViewYear = n.getFullYear(); dutyViewMonth = n.getMonth(); render(); }
+
+/* ---- day entry modal ---- */
+function dutyOpenDay(key){
+  const e = dEntries()[key], [y,m,d] = key.split('-').map(Number), dObj = new Date(y,m-1,d);
+  const mode = (e && e.type==='off') ? 'off' : 'work';
+  dutyModalState = {date:key, mode, offType:(e && e.type==='off') ? dOffType(e) : 'leave'};
+  const st = dSettings(), w = (e && e.type==='work') ? e : {};
+  openModal(`
+    <h3>Day entry</h3>
+    <div class="hint" style="margin:-8px 0 14px;">${DUTY_WD_FULL[dObj.getDay()]}, ${d} ${DUTY_MONTHS[m-1]} ${y}</div>
+    <div class="chips" style="margin-bottom:14px;">
+      <span class="chip ${mode==='work'?'active':''}" data-dmode="work" onclick="dutySetMode('work')">Duty time</span>
+      <span class="chip ${mode==='off'?'active':''}" data-dmode="off" onclick="dutySetMode('off')">Leave / closed</span>
+    </div>
+    <div id="dWork" style="${mode==='work'?'':'display:none;'}">
+      <div class="row">
+        <div class="field"><label>Entry time</label>${timeInputHtml('dEntry', w.entry, st.dutyStart)}</div>
+        <div class="field"><label>Exit time (optional)</label>
+          <div class="duty-exit-row">${timeInputHtml('dExit', w.exit, st.dutyEnd)}<button type="button" class="btn btn-ghost btn-icon" title="Clear exit time" onclick="dutyClearExit()">${ICONS.xmark}</button></div>
+        </div>
+      </div>
+      <div class="hint" id="dDurHint" style="margin:0 0 12px;"></div>
+      <div class="field" id="dLateField" style="display:none;"><label>Reason for being late (optional)</label><input id="dLateReason" value="${esc(w.lateReason||'')}" placeholder="e.g. Heavy traffic"></div>
+      <div class="field" id="dEarlyField" style="display:none;"><label>Reason for leaving early (optional)</label><input id="dEarlyReason" value="${esc(w.earlyReason||'')}" placeholder="e.g. Doctor's appointment"></div>
+    </div>
+    <div id="dOff" style="${mode==='off'?'':'display:none;'}">
+      <div class="field"><label>Type</label>
+        <div class="chips" style="margin-bottom:6px;">
+          <span class="chip ${dutyModalState.offType==='leave'?'active':''}" data-doff="leave" onclick="dutySetOff('leave')">Personal leave</span>
+          <span class="chip ${dutyModalState.offType==='holiday'?'active':''}" data-doff="holiday" onclick="dutySetOff('holiday')">Office closed / holiday</span>
+        </div>
+        <div class="hint" style="margin:0;">Personal leave still counts toward your expected duty hours (you were supposed to work). On office-closed days no duty hours are expected at all.</div>
+      </div>
+      <div class="field"><label>Reason / name (optional)</label><input id="dOffLabel" value="${esc(e && e.type==='off' ? (e.label||'') : '')}" placeholder="e.g. Eid holiday, sick leave"></div>
+    </div>
+    <div class="modal-actions">
+      ${e?`<button class="btn btn-danger" style="margin-right:auto;" onclick="dutyClearDay()">Clear entry</button>`:''}
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="dutySaveDay()">Save</button>
+    </div>`);
+  ['dEntry','dExit'].forEach(id=>document.getElementById(id).addEventListener('change', dutyTimeChanged));
+  dutyTimeChanged();
+}
+function dutySetMode(mode){
+  dutyModalState.mode = mode;
+  document.querySelectorAll('[data-dmode]').forEach(c=>c.classList.toggle('active', c.dataset.dmode===mode));
+  document.getElementById('dWork').style.display = mode==='work' ? '' : 'none';
+  document.getElementById('dOff').style.display = mode==='off' ? '' : 'none';
+}
+function dutySetOff(type){
+  dutyModalState.offType = type;
+  document.querySelectorAll('[data-doff]').forEach(c=>c.classList.toggle('active', c.dataset.doff===type));
+}
+function dutyClearExit(){
+  const x = document.getElementById('dExit'); x.dataset.time = ''; x.value = ''; dutyTimeChanged();
+}
+function dutyTimeChanged(){
+  const en = document.getElementById('dEntry'), ex = document.getElementById('dExit'); if(!en || !ex) return;
+  const eT = en.dataset.time || '', xT = ex.dataset.time || '';
+  const fl = dFlags({type:'work', entry:eT, exit:xT});
+  document.getElementById('dLateField').style.display = fl.late ? 'block' : 'none';
+  document.getElementById('dEarlyField').style.display = fl.early ? 'block' : 'none';
+  const hint = document.getElementById('dDurHint'), du = dDur(eT, xT);
+  hint.textContent = (eT && xT && du) ? 'Total time: '+du.label : eT ? 'Saving with just the entry time is fine \u2014 add the exit time later.' : 'Select an entry time.';
+}
+function dutySaveDay(){
+  const key = dutyModalState.date; if(!key) return;
+  if(dutyModalState.mode==='work'){
+    const eT = document.getElementById('dEntry').dataset.time || '', xT = document.getElementById('dExit').dataset.time || '';
+    if(!eT){ toast('Please select an entry time'); return; }
+    const fl = dFlags({type:'work', entry:eT, exit:xT}), obj = {type:'work', entry:eT, exit:xT || null};
+    if(fl.late){ const v = document.getElementById('dLateReason').value.trim(); if(v) obj.lateReason = v; }
+    if(fl.early){ const v = document.getElementById('dEarlyReason').value.trim(); if(v) obj.earlyReason = v; }
+    state.duty.entries[key] = obj;
+  } else {
+    state.duty.entries[key] = {type:'off', label:document.getElementById('dOffLabel').value.trim(), offType:dutyModalState.offType};
+  }
+  save(); closeModal(); toast('Entry saved'); render();
+}
+function dutyClearDay(){
+  const key = dutyModalState.date; if(!key) return;
+  delete state.duty.entries[key];
+  save(); closeModal(); toast('Entry cleared'); render();
+}
+
+/* ---- settings modal ---- */
+function dutyOpenSettings(){
+  const st = dSettings();
+  dutySettingsDraft = [...st.weekend];
+  openModal(`
+    <h3>Duty settings</h3>
+    <div class="field"><label>Weekly holidays</label>
+      <div class="chips" style="margin-bottom:6px;">${DUTY_WD.map((w,i)=>`<span class="chip ${dutySettingsDraft.includes(i)?'active':''}" data-wd="${i}" onclick="dutyToggleWeekend(${i})">${w}</span>`).join('')}</div>
+      <div class="hint" style="margin:0;">On the selected days, a missing entry isn\u2019t counted as absent.</div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Duty start</label>${timeInputHtml('dsStart', st.dutyStart)}</div>
+      <div class="field"><label>Duty end</label>${timeInputHtml('dsEnd', st.dutyEnd)}</div>
+    </div>
+    <div class="hint" style="margin-top:0;">An entry after the start time counts as late; an exit before the end time counts as leaving early. The time between start and end is your expected duty time for each working day.</div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="dutySaveSettings()">Save</button></div>`);
+}
+function dutyToggleWeekend(i){
+  const p = dutySettingsDraft.indexOf(i);
+  if(p>-1) dutySettingsDraft.splice(p,1); else dutySettingsDraft.push(i);
+  document.querySelectorAll('[data-wd]').forEach(c=>c.classList.toggle('active', dutySettingsDraft.includes(Number(c.dataset.wd))));
+}
+function dutySaveSettings(){
+  const s = document.getElementById('dsStart').dataset.time, e = document.getElementById('dsEnd').dataset.time;
+  if(!s || !e){ toast('Please set both start and end time'); return; }
+  state.duty.settings = {weekend:[...dutySettingsDraft].sort((a,b)=>a-b), dutyStart:s, dutyEnd:e};
+  save(); closeModal(); toast('Duty settings saved'); render();
+}
+
+/* ---- PDF (print dialog, same as the other ClassBoard exports) ---- */
+function dutyExportPDF(){
+  const y = dutyViewYear, m = dutyViewMonth, dim = new Date(y,m+1,0).getDate();
+  let rows = '';
+  for(let d=1; d<=dim; d++){
+    const info = dDayStatus(y,m,d), e = info.entry, wd = DUTY_WD[new Date(y,m,d).getDay()], fl = dFlags(e);
+    let status = '', eT = '-', xT = '-', dT = '-', fT = '-';
+    if(info.status==='worked'){
+      status = 'Present'; eT = formatTime12(e.entry); xT = formatTime12(e.exit);
+      const du = dDur(e.entry, e.exit); if(du) dT = du.label;
+      const f = [];
+      if(fl.late) f.push('Late'+(e.lateReason?' ('+esc(e.lateReason)+')':''));
+      if(fl.early) f.push('Left early'+(e.earlyReason?' ('+esc(e.earlyReason)+')':''));
+      fT = f.length ? f.join(', ') : '-';
+    } else if(info.status==='in-progress' || info.status==='incomplete'){
+      status = info.status==='in-progress' ? 'Present (ongoing)' : 'Present (no exit logged)'; eT = formatTime12(e.entry);
+      if(fl.late) fT = 'Late'+(e.lateReason?' ('+esc(e.lateReason)+')':'');
+    } else if(info.status==='missed'){ status = 'Absent'; }
+    else if(info.status==='off'){ status = (dOffType(e)==='holiday' ? 'Office closed / holiday' : 'Personal leave') + (e.label?' \u2014 '+esc(e.label):''); }
+    else if(info.status==='weekend'){ status = 'Weekly holiday'; }
+    else if(info.status==='today-pending'){ status = 'Pending'; }
+    else { status = '-'; }
+    rows += `<tr><td>${d} (${wd})</td><td>${status}</td><td>${eT}</td><td>${xT}</td><td>${dT}</td><td>${fT}</td></tr>`;
+  }
+  const s = dMonthSummary(y,m), diff = s.worked - s.expMin, p = state.profile;
+  const html = `
+    <h1>Duty Log \u2014 ${DUTY_MONTHS[m]} ${y}</h1>
+    ${p.name?`<p><b>${esc(p.name)}</b>${p.department?' \u00b7 '+esc(p.department):''}${p.university?' \u00b7 '+esc(p.university):''}</p>`:''}
+    <p>Exported: ${new Date().toLocaleString('en-US')}</p>
+    <table><tr><th>Date</th><th>Status</th><th>Entry</th><th>Exit</th><th>Duration</th><th>Flags</th></tr>${rows}</table>
+    <h2>Summary</h2>
+    <p>Present: ${s.present} &nbsp; Absent: ${s.missed} &nbsp; Personal leave: ${s.leave} &nbsp; Office closed: ${s.holiday} &nbsp; Weekly holidays: ${s.weekend}</p>
+    <p>Late: ${s.late} &nbsp; Left early: ${s.early}</p>
+    <p><b>Expected duty days (working days, excluding office-closed days): ${s.expDays}</b><br>
+    <b>Expected duty hours: ${dHM(s.expMin)}</b><br>
+    <b>Actual duty hours worked: ${dHM(s.worked)}</b><br>
+    <b>Difference (actual \u2212 expected): ${diff<0?'\u2212':'+'}${dHM(diff)}</b></p>
+    <p style="font-size:11px;">Note: office-closed days are excluded from expected duty hours entirely. Personal-leave days still count toward expected duty hours (days you were supposed to work).</p>`;
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(()=>window.print(), 100);
+}
+
+/* ---- Duty-only JSON backup / import (compatible with the old standalone app) ---- */
+function dutyExportJSON(){
+  const payload = {data:state.duty.entries, settings:state.duty.settings, exportedAt:new Date().toISOString()};
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = 'dutylog-backup-'+dTodayKey()+'.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  toast('Duty backup downloaded');
+}
+function dutyImportFile(evt){
+  const f = evt.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = e=>{ try{ dutyImportParsed(JSON.parse(e.target.result)); }catch(err){ toast('This file is not valid'); } };
+  r.readAsText(f); evt.target.value = '';
+}
+function dutyImportParsed(parsed){
+  if(!parsed || typeof parsed!=='object'){ toast('This file is not valid'); return; }
+  const raw = parsed.data || (parsed.duty && parsed.duty.entries) || parsed;
+  const settings = parsed.settings || (parsed.duty && parsed.duty.settings) || null;
+  const clean = {};
+  if(raw && typeof raw==='object') Object.keys(raw).forEach(k=>{ const v = raw[k]; if(/^\d{4}-\d{2}-\d{2}$/.test(k) && v && (v.type==='work' || v.type==='off')) clean[k] = v; });
+  const hasSettings = !!(settings && Array.isArray(settings.weekend));
+  const n = Object.keys(clean).length;
+  if(!n && !hasSettings){ toast('No duty entries found in this file'); return; }
+  dutyPending = {entries:clean, settings:hasSettings ? settings : null};
+  openModal(`
+    <h3>Import duty data</h3>
+    <p style="font-size:13.5px; line-height:1.55; color:var(--chalk-dim); margin:0;">Found <b style="color:var(--chalk);">${n}</b> duty ${n===1?'entry':'entries'}${hasSettings?' and your duty settings':''}.</p>
+    <div class="hint">Merge keeps your current entries and adds the imported ones (the imported entry wins if both have the same date). Replace deletes the current Duty Log entries first.</div>
+    <div class="modal-actions" style="flex-wrap:wrap;">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="dutyApplyImport('replace')">Replace</button>
+      <button class="btn btn-primary" onclick="dutyApplyImport('merge')">Merge</button>
+    </div>`);
+}
+function dutyApplyImport(mode){
+  const p = dutyPending; if(!p) return;
+  state.duty.entries = mode==='merge' ? Object.assign({}, state.duty.entries, p.entries) : p.entries;
+  if(p.settings) state.duty.settings = normalizeState({duty:{settings:p.settings}}).duty.settings;
+  dutyPending = null;
+  save(); closeModal(); toast('Duty data imported'); render();
+}
+
 /* ---------------- Init ---------------- */
-render();
+bootApp();
 </script>
 </body>
 </html>
