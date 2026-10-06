@@ -487,6 +487,13 @@ div.dcell.empty{ visibility:hidden; pointer-events:none; }
 .set-actions{ flex-shrink:0; display:flex; gap:8px; }
 .danger-card{ border-color:rgba(239,100,97,.30); }
 @media(max-width:560px){ .set-row{ flex-direction:column; align-items:stretch; gap:10px; } .set-actions .btn{ width:100%; text-align:center; } .acct-hero .btn{ width:100%; } }
+
+/* clock picker: drag + selected-value dot */
+.clock-face{ touch-action:none; cursor:pointer; user-select:none; -webkit-user-select:none; }
+.clock-num{ pointer-events:none; z-index:3; }
+.clock-num.active{ background:transparent !important; color:var(--bg) !important; }
+.clock-hand-dot{ position:absolute; right:-16px; top:50%; width:32px; height:32px; margin-top:-16px; border-radius:50%; background:var(--yellow); }
+.clock-nudge{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; }
 </style>
 </head>
 <body class="mode-boot">
@@ -688,52 +695,79 @@ function clockPt(index, total, radiusPct){
 function clockPickerHtml(){
   const s = clockState;
   const isHour = s.mode==='hour';
-  const numbers = isHour
-    ? Array.from({length:12},(_,i)=> i===0?12:i)
-    : Array.from({length:12},(_,i)=> i*5);
-  const selectedIndex = isHour
-    ? (s.hour===12? 0 : s.hour)
-    : (s.minute/5);
-  const handAngle = (selectedIndex/12)*2*Math.PI - Math.PI/2;
-  const handLen = 34;
-  const handX = 50 + handLen*Math.cos(handAngle);
-  const handY = 50 + handLen*Math.sin(handAngle);
+  const numbers = isHour ? Array.from({length:12},(_,i)=> i===0?12:i) : Array.from({length:12},(_,i)=> i*5);
+  const deg = isHour ? (s.hour%12)*30-90 : s.minute*6-90;
   const dots = numbers.map((n,i)=>{
     const pt = clockPt(i,12,38);
-    const active = isHour? (n===s.hour || (n===12 && s.hour===12)) : (n===s.minute);
-    return `<button type="button" class="clock-num ${active?'active':''}" style="left:${pt.x}%; top:${pt.y}%;" onclick="${isHour? `pickClockHour(${n})` : `pickClockMinute(${n})`}">${isHour? n : String(n).padStart(2,'0')}</button>`;
+    const active = isHour ? (n===s.hour) : (n===s.minute);
+    return `<span class="clock-num ${active?'active':''}" data-n="${n}" style="left:${pt.x}%; top:${pt.y}%;">${isHour? n : String(n).padStart(2,'0')}</span>`;
   }).join('');
   return `
     <h3>Select Time</h3>
     <div class="clock-readout">
-      <button type="button" class="clock-readout-part ${isHour?'active':''}" onclick="clockState.mode='hour'; showClock();">${String(s.hour).padStart(2,'0')}</button>
+      <button type="button" id="clockHr" class="clock-readout-part ${isHour?'active':''}" onclick="clockState.mode='hour'; showClock();">${String(s.hour).padStart(2,'0')}</button>
       <span>:</span>
-      <button type="button" class="clock-readout-part ${!isHour?'active':''}" onclick="clockState.mode='minute'; showClock();">${String(s.minute).padStart(2,'0')}</button>
+      <button type="button" id="clockMin" class="clock-readout-part ${!isHour?'active':''}" onclick="clockState.mode='minute'; showClock();">${String(s.minute).padStart(2,'0')}</button>
       <div class="clock-ampm">
         <button type="button" class="clock-ampm-btn ${s.ampm==='AM'?'active':''}" onclick="clockState.ampm='AM'; showClock();">AM</button>
         <button type="button" class="clock-ampm-btn ${s.ampm==='PM'?'active':''}" onclick="clockState.ampm='PM'; showClock();">PM</button>
       </div>
     </div>
-    <div class="clock-face">
-      <div class="clock-hand" style="width:${handLen}%; transform:rotate(${handAngle*180/Math.PI}deg);"></div>
+    <div class="clock-face" id="clockFace" onpointerdown="clockPointerDown(event)" onpointermove="clockPointerMove(event)" onpointerup="clockPointerUp(event)" onpointercancel="clockPointerUp(event)">
+      <div class="clock-hand" id="clockHand" style="width:38%; transform:rotate(${deg}deg);"><span class="clock-hand-dot"></span></div>
       <div class="clock-center"></div>
       ${dots}
     </div>
+    ${isHour ? `<div class="hint" style="text-align:center;">Tap or drag on the clock to pick the hour</div>` : `
+    <div class="clock-nudge">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="clockNudge(-1)">\u2212 1 min</button>
+      <span class="hint" style="margin:0;">Drag the hand for exact minutes</span>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="clockNudge(1)">+ 1 min</button>
+    </div>`}
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeClock()">Cancel</button>
       <button class="btn btn-primary" onclick="confirmClockPick()">Done</button>
     </div>
   `;
 }
-function pickClockHour(h){
-  clockState.hour = h;
-  clockState.mode = 'minute';
-  showClock();
+function clockLiveUpdate(){
+  const s = clockState; if(!s) return;
+  const isHour = s.mode==='hour';
+  const hand = document.getElementById('clockHand');
+  if(hand) hand.style.transform = 'rotate(' + (isHour ? (s.hour%12)*30-90 : s.minute*6-90) + 'deg)';
+  const hr = document.getElementById('clockHr'), mn = document.getElementById('clockMin');
+  if(hr) hr.textContent = String(s.hour).padStart(2,'0');
+  if(mn) mn.textContent = String(s.minute).padStart(2,'0');
+  document.querySelectorAll('.clock-num').forEach(el=>{
+    const n = Number(el.dataset.n);
+    el.classList.toggle('active', isHour ? n===s.hour : n===s.minute);
+  });
 }
-function pickClockMinute(m){
-  clockState.minute = m;
-  showClock();
+function clockAngle(e){
+  const r = document.getElementById('clockFace').getBoundingClientRect();
+  const dx = e.clientX-(r.left+r.width/2), dy = e.clientY-(r.top+r.height/2);
+  let a = Math.atan2(dx,-dy)*180/Math.PI; if(a<0) a += 360;
+  return a;
 }
+function clockApply(e){
+  const a = clockAngle(e);
+  if(clockState.mode==='hour'){ const k = Math.round(a/30)%12; clockState.hour = k===0 ? 12 : k; }
+  else { clockState.minute = Math.round(a/6)%60; }
+  clockLiveUpdate();
+}
+function clockPointerDown(e){
+  if(!clockState) return;
+  e.preventDefault(); clockState.drag = true;
+  try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){}
+  clockApply(e);
+}
+function clockPointerMove(e){ if(clockState && clockState.drag){ e.preventDefault(); clockApply(e); } }
+function clockPointerUp(e){
+  if(!clockState || !clockState.drag) return;
+  clockState.drag = false;
+  if(clockState.mode==='hour'){ clockState.mode = 'minute'; showClock(); }
+}
+function clockNudge(d){ clockState.minute = (clockState.minute + d + 60) % 60; clockLiveUpdate(); }
 function confirmClockPick(){
   const s = clockState;
   let h24 = s.hour%12;
