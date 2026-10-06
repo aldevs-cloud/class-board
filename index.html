@@ -2951,6 +2951,12 @@ let dutyTimerInt = null;
 let dutyModalState = {date:null, mode:'work', offType:'leave'};
 let dutySettingsDraft = [];
 let dutyPending = null;
+const DOFF_HINT = {
+  leave:'Personal leave still counts toward your expected duty hours (you were supposed to work).',
+  holiday:'Office closed / public holiday: no duty hours are expected on this day.',
+  weekly:'Counts as a weekly holiday, just like your fixed weekly holidays: not absent, no expected hours.',
+  officeday:'Counts as a normal duty day even if it falls on a weekly holiday: expected hours apply, and it shows as absent if nothing is logged.'
+};
 
 function dEntries(){ return state.duty.entries; }
 function dSettings(){ return state.duty.settings; }
@@ -2976,11 +2982,14 @@ function dDayStatus(y,m,d){
     if(entry.exit) return {status:'worked', key, entry};
     return {status: isToday ? 'in-progress' : 'incomplete', key, entry};
   }
-  if(entry && entry.type==='off') return {status:'off', key, entry};
-  if(isFuture) return {status:'future', key, entry:null};
-  if(dIsWeekend(dObj)) return {status:'weekend', key, entry:null};
-  if(isToday) return {status:'today-pending', key, entry:null};
-  return {status:'missed', key, entry:null};
+  const ot = (entry && entry.type==='off') ? dOffType(entry) : null;
+  if(ot==='weekly') return {status:'weekend', key, entry};                        // manually marked weekly holiday
+  if(entry && entry.type==='off' && ot!=='officeday') return {status:'off', key, entry};
+  const forced = ot==='officeday';                                                // manually marked office day (works even on a weekly holiday)
+  if(isFuture) return {status:'future', key, entry:entry||null};
+  if(!forced && dIsWeekend(dObj)) return {status:'weekend', key, entry:null};
+  if(isToday) return {status:'today-pending', key, entry:entry||null};
+  return {status:'missed', key, entry:entry||null};
 }
 function dFlags(entry){
   const f = {late:false, early:false};
@@ -3047,7 +3056,7 @@ function dutyAfterRender(){
 
 /* ---- main view ---- */
 function dutyTodayHtml(){
-  const key = dTodayKey(), e = dEntries()[key];
+  const key = dTodayKey(), rawE = dEntries()[key], marked = !!(rawE && rawE.type==='off' && dOffType(rawE)==='officeday'), e = marked ? null : rawE;
   const dateStr = new Date().toLocaleDateString('en-US',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
   const head = `<p class="card-title">Today</p><div class="hint" style="margin:-6px 0 10px;">${dateStr}</div>`;
   const openBtn = (label, primary)=>`<button class="btn ${primary?'btn-primary':''}" style="margin-top:12px; width:100%;" onclick="dutyOpenDay('${key}')">${label}</button>`;
@@ -3069,10 +3078,10 @@ function dutyTodayHtml(){
       ${openBtn('Add exit time', true)}`;
   }
   if(e && e.type==='off'){
-    const holiday = dOffType(e)==='holiday';
-    return `${head}<div class="duty-status-line" style="color:${holiday?'var(--purple)':'var(--amber)'};">${holiday?'Office closed today':'Personal leave today'}${e.label?' \u2014 '+esc(e.label):''}</div>${openBtn('Edit entry')}`;
+    const ot = dOffType(e), holiday = ot==='holiday', weekly = ot==='weekly';
+    return `${head}<div class="duty-status-line" style="color:${weekly?'var(--chalk-dim)':holiday?'var(--purple)':'var(--amber)'};">${weekly?'Weekly holiday today':holiday?'Office closed today':'Personal leave today'}${e.label?' \u2014 '+esc(e.label):''}</div>${openBtn('Edit entry')}`;
   }
-  return `${head}<div class="duty-status-line">Today\u2019s entry hasn\u2019t been added yet</div>${openBtn('Add entry', true)}`;
+  return `${head}<div class="duty-status-line">Today\u2019s entry hasn\u2019t been added yet</div>${marked?'<div class="duty-note" style="color:var(--chalk-dim);">Marked as an office day</div>':''}${openBtn('Add entry', true)}`;
 }
 function dutyCalendarHtml(){
   const y = dutyViewYear, m = dutyViewMonth, dim = new Date(y,m+1,0).getDate(), first = new Date(y,m,1).getDay();
@@ -3094,6 +3103,7 @@ function dutyCalendarHtml(){
       const ot = dOffType(e); cls = 'off type-'+ot; sub = ot==='holiday' ? 'Closed' : 'Leave';
       if(e.label) tip.push(e.label);
     } else if(info.status==='today-pending'){ cls = 'pending'; pend = '<span class="pend"></span>'; }
+    if(e && e.type==='off'){ const ot2 = dOffType(e); if(ot2==='weekly'){ sub = 'Holiday'; if(e.label) tip.push(e.label); } else if(ot2==='officeday'){ sub = sub || 'Office'; tip.push('Marked as office day'+(e.label?': '+e.label:'')); } }
     if(info.key===dTodayKey()) cls += ' is-today';
     cells += `<button type="button" class="dcell ${cls}" onclick="dutyOpenDay('${info.key}')"${tip.length?` title="${esc(tip.join(' \u00b7 '))}"`:''}><span class="dnum">${d}</span>${sub?`<span class="dsub">${sub}</span>`:''}${pend}${flag}</button>`;
   }
@@ -3107,7 +3117,7 @@ function dutyCalendarHtml(){
     <div class="duty-wd">${wd}</div>
     <div class="duty-days">${cells}</div>
     <div class="duty-legend">
-      ${lg('var(--green)','Duty done')}${lg('var(--yellow)','On duty / no exit')}${lg('var(--danger)','Absent')}${lg('var(--amber)','Personal leave')}${lg('var(--purple)','Office closed')}${lg('var(--chalk-faint)','Weekly holiday')}${lg('var(--amber)','Late / left early (dot)')}
+      ${lg('var(--green)','Duty done')}${lg('var(--yellow)','On duty / no exit')}${lg('var(--danger)','Absent')}${lg('var(--amber)','Personal leave')}${lg('var(--purple)','Office closed')}${lg('var(--chalk-faint)','Weekly holiday (set or manual)')}${lg('var(--amber)','Late / left early (dot)')}
     </div>`;
 }
 function renderDuty(){
@@ -3159,7 +3169,7 @@ function dutyOpenDay(key){
     <div class="hint" style="margin:-8px 0 14px;">${DUTY_WD_FULL[dObj.getDay()]}, ${d} ${DUTY_MONTHS[m-1]} ${y}</div>
     <div class="chips" style="margin-bottom:14px;">
       <span class="chip ${mode==='work'?'active':''}" data-dmode="work" onclick="dutySetMode('work')">Duty time</span>
-      <span class="chip ${mode==='off'?'active':''}" data-dmode="off" onclick="dutySetMode('off')">Leave / closed</span>
+      <span class="chip ${mode==='off'?'active':''}" data-dmode="off" onclick="dutySetMode('off')">Leave / holiday</span>
     </div>
     <div id="dWork" style="${mode==='work'?'':'display:none;'}">
       <div class="row">
@@ -3174,11 +3184,13 @@ function dutyOpenDay(key){
     </div>
     <div id="dOff" style="${mode==='off'?'':'display:none;'}">
       <div class="field"><label>Type</label>
-        <div class="chips" style="margin-bottom:6px;">
+        <div class="chips" style="margin-bottom:6px; flex-wrap:wrap; overflow:visible; padding:0; margin-left:0; margin-right:0;">
           <span class="chip ${dutyModalState.offType==='leave'?'active':''}" data-doff="leave" onclick="dutySetOff('leave')">Personal leave</span>
-          <span class="chip ${dutyModalState.offType==='holiday'?'active':''}" data-doff="holiday" onclick="dutySetOff('holiday')">Office closed / holiday</span>
+          <span class="chip ${dutyModalState.offType==='holiday'?'active':''}" data-doff="holiday" onclick="dutySetOff('holiday')">Office closed</span>
+          <span class="chip ${dutyModalState.offType==='weekly'?'active':''}" data-doff="weekly" onclick="dutySetOff('weekly')">Weekly holiday</span>
+          <span class="chip ${dutyModalState.offType==='officeday'?'active':''}" data-doff="officeday" onclick="dutySetOff('officeday')">Office day</span>
         </div>
-        <div class="hint" style="margin:0;">Personal leave still counts toward your expected duty hours (you were supposed to work). On office-closed days no duty hours are expected at all.</div>
+        <div class="hint" id="dOffHint" style="margin:0;">${DOFF_HINT[dutyModalState.offType]}</div>
       </div>
       <div class="field"><label>Reason / name (optional)</label><input id="dOffLabel" value="${esc(e && e.type==='off' ? (e.label||'') : '')}" placeholder="e.g. Eid holiday, sick leave"></div>
     </div>
@@ -3199,6 +3211,7 @@ function dutySetMode(mode){
 function dutySetOff(type){
   dutyModalState.offType = type;
   document.querySelectorAll('[data-doff]').forEach(c=>c.classList.toggle('active', c.dataset.doff===type));
+  const h = document.getElementById('dOffHint'); if(h) h.textContent = DOFF_HINT[type] || '';
 }
 function dutyClearExit(){
   const x = document.getElementById('dExit'); x.dataset.time = ''; x.value = ''; dutyTimeChanged();
@@ -3278,7 +3291,7 @@ function dutyExportPDF(){
     } else if(info.status==='in-progress' || info.status==='incomplete'){
       status = info.status==='in-progress' ? 'Present (ongoing)' : 'Present (no exit logged)'; eT = formatTime12(e.entry);
       if(fl.late) fT = 'Late'+(e.lateReason?' ('+esc(e.lateReason)+')':'');
-    } else if(info.status==='missed'){ status = 'Absent'; }
+    } else if(info.status==='missed'){ status = 'Absent' + (e && e.type==='off' ? ' (marked office day)' : ''); }
     else if(info.status==='off'){ status = (dOffType(e)==='holiday' ? 'Office closed / holiday' : 'Personal leave') + (e.label?' \u2014 '+esc(e.label):''); }
     else if(info.status==='weekend'){ status = 'Weekly holiday'; }
     else if(info.status==='today-pending'){ status = 'Pending'; }
